@@ -41,6 +41,6 @@ require("./app/routes/quote.routes.js")(app);
 // set port, listen for requests
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, "localhost", () => {
-	console.log(`API Server is running on port ${PORT}.`);
+	console.log(`API Server is running at http://localhost:${PORT}/`);
 	// TODO: call timer regration function
 });
