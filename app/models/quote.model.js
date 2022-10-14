@@ -60,4 +60,23 @@ Quote.create = (newQuote, result) => {
 	});
 };
 
+Quote.status = (quoteId, result) => {
+	const status_sql = "SELECT status FROM quote WHERE quoteId = ?;";
+
+	sql.get(status_sql, [quoteId], (err, res) => {
+		if(err) {
+			console.log("error:", err);
+			result(err, null);
+			return;
+		}
+
+		if(!res) {
+			result({"code": 404, "message": "Quote not found"}, null);
+			return;
+		}
+
+		result(null, res);
+	});
+}
+
 module.exports = Quote;

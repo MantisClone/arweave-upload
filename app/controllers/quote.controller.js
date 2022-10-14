@@ -9,7 +9,7 @@ exports.create = async (req, res) => {
 	// TODO: when checking addresses, also check checksum
 
 	// Validate request
-	if (!req.body) {
+	if(!req.body) {
 		res.status(400).send({
 			message: "Content can not be empty!"
 		});
@@ -220,6 +220,44 @@ exports.create = async (req, res) => {
 			res.status(500).send({
 				message:
 					err.message || "Error occurred while creating the quote."
+			});
+		}
+		else {
+			// send receipt for data
+			res.send(data);
+		}
+	});
+};
+
+exports.status = async (req, res) => {
+	const quoteidRegex = /^[a-fA-F0-9]{32}$/;
+
+	if(!req.query || !req.query.quoteId) {
+		res.status(400).send({
+			message: "Error, quoteId required."
+		});
+		return;
+	}
+	const quoteId = req.query.quoteId;
+
+	if(!quoteidRegex.test(quoteId)) {
+		res.status(400).send({
+			message: "Invalid quoteId format."
+		});
+		return;
+	}
+
+	Quote.status(quoteId, (err, data) => {
+		if(err) {
+			if(err.code == 404) {
+				res.status(404).send({
+					status: 0
+				});
+				return;
+			}
+			res.status(500).send({
+				message:
+					err.message || "Error occurred while looking up status."
 			});
 		}
 		else {
