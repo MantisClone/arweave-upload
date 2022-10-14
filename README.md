@@ -1,5 +1,5 @@
-# arweave-upload
-A micro-service used by Ocean Protocol for uploading files to Arweave
+# dbs_arweave
+Arweave microservice for DBS
 
 ```bash
 npm install
