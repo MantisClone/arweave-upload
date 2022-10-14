@@ -1,12 +1,12 @@
 const Bundlr = require("@bundlr-network/client");
 const crypto = require("crypto");
 
-//const Quote = require("../models/quote.model.js");
+const Quote = require("../models/quote.model.js");
 const acceptToken = require("./tokens.js");
 
 exports.create = async (req, res) => {
 	const addressRegex = /^0x[a-fA-F0-9]{40}$/;
-	// TODO: when checking addresses, also do checksum
+	// TODO: when checking addresses, also check checksum
 
 	// Validate request
 	if (!req.body) {
@@ -195,16 +195,36 @@ exports.create = async (req, res) => {
 	const bundlr = new Bundlr.default(process.env.ARWEAVE_GATEWAY_URI, paymentToken, process.env.PRIVATE_KEY);
 
 	const priceWei = await bundlr.getPrice(totalLength);
-	const price = bundlr.utils.unitConverter(priceWei);
+	const tokenAmount = bundlr.utils.unitConverter(priceWei);
 
+	// TODO: generate this better
 	const quoteId = crypto.randomBytes(16).toString("hex");
-	const data = {
-		"tokenAmount": parseFloat(price).toFixed(18),
-		"approveAddress": "0x0000000000000000000000000000000000000000", // TODO: replace with real address
-		"chainId": chainId,
-		"tokenAddress": tokenAddress,
-		"quoteId": quoteId
-	};
 
-	res.send(data);
+	// save data in database
+	const quote = new Quote({
+		quoteId: quoteId,
+		status: 1, // defaults to 1
+		created: Date.now(),
+		chainId: chainId,
+		tokenAddress: tokenAddress,
+		userAddress: userAddress,
+		tokenAmount: parseFloat(tokenAmount).toFixed(18),
+		approveAddress: "0x0000000000000000000000000000000000000000", // TODO: replace with real address
+		files: file_lengths
+
+	});
+
+	// Save Reading in the database
+	Quote.create(quote, (err, data) => {
+		if(err) {
+			res.status(500).send({
+				message:
+					err.message || "Error occurred while creating the quote."
+			});
+		}
+		else {
+			// send receipt for data
+			res.send(data);
+		}
+	});
 };
