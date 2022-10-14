@@ -42,5 +42,12 @@ require("./app/routes/quote.routes.js")(app);
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, "localhost", () => {
 	console.log(`API Server is running at http://localhost:${PORT}/`);
-	// TODO: call timer regration function
+	register();
+	const registrationTimer = setInterval(register, process.env.REGISTRATION_INTERVAL)
+	// Don't call timeout if it is the last code to execute, won't keep process alive.
+	registrationTimer.unref()
 });
+
+function register() {
+	console.log('register')
+}

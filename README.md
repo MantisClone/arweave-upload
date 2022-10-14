@@ -8,6 +8,7 @@ export ARWEAVE_GATEWAY_URI="https://node1.bundlr.network"
 export PORT=8081
 export PRIVATE_KEY="0000000000000000000000000000000000000000000000000000000000000000"
 export SQLITE_DB_PATH=/path/to/db/file
+export REGISTRATION_INTERVAL=300000 # ms, 5 mins
 npm start
 ```
 
