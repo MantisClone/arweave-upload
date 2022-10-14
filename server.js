@@ -1,13 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cors = require('cors');
 
 const app = express();
 app.disable('x-powered-by');
 
 // TODO: validate config
-
-app.use(cors());
 
 app.use(function(req, res, next) {
     next(); // moves to next middleware
