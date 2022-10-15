@@ -33,7 +33,7 @@ app.get("/robots.txt", (req, res) => {
 });
 
 require("./app/routes/quote.routes.js")(app);
-//require("./app/routes/upload.routes.js")(app);
+require("./app/routes/upload.routes.js")(app);
 
 // set port, listen for requests
 const PORT = process.env.PORT || 8081;

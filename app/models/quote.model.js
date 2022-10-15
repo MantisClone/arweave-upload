@@ -79,4 +79,27 @@ Quote.status = (quoteId, result) => {
 	});
 }
 
+Quote.get = (quoteId, result) => {
+	const quote_sql = `
+		SELECT *, (SELECT SUM(length) FROM files WHERE quoteId = 'd54a911f0c1dbdc4825fadcac00c94e6') AS 'size'
+		FROM quote
+		WHERE quoteId = ?;
+	`;
+
+	sql.get(quote_sql, [quoteId], (err, res) => {
+		if(err) {
+			console.log("error:", err);
+			result(err, null);
+			return;
+		}
+
+		if(!res) {
+			result({"code": 404, "message": "Quote not found"}, null);
+			return;
+		}
+
+		result(null, res);
+	});
+}
+
 module.exports = Quote;
