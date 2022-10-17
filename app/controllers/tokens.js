@@ -21,6 +21,9 @@ acceptToken = (chainId, tokenAddress) => {
 	return false;
 };
 
+/**
+ * Get a list of supported payment options in the format expected by /register
+ */
 getAcceptedPaymentDetails = () => {
 	const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 	const acceptedDetails = tokens.filter((token) => acceptedPayments.includes(token.name));
