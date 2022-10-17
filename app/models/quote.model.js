@@ -158,7 +158,6 @@ Quote.getLink = (quoteId, result) => {
 			result(null, rows);
 		});
 	});
-}
-
+};
 
 module.exports = Quote;

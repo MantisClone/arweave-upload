@@ -155,8 +155,6 @@ exports.upload = async (req, res) => {
 			return;
 		}	
 
-		//console.log(`Whole quote size: ${quote.size}`);
-
 		let priceWei;
 		try {
 			priceWei = await bundlr.getPrice(quote.size);
@@ -186,6 +184,7 @@ exports.upload = async (req, res) => {
 		// TODO: Unwrap WETH to ETH
 
 		// Fund our EOA's Bundlr Account
+
 		// TODO: Check the balance first
 		try {
 			let response = await bundlr.fund(priceWei);

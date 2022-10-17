@@ -217,7 +217,6 @@ exports.create = async (req, res) => {
 		});
 		return;
 	}
-
 	const tokenAmount = priceWei.add(priceWei.div(10)); // add 10% buffer since prices fluctuate
 
 	// TODO: generate this better
