@@ -1,6 +1,7 @@
 const Bundlr = require("@bundlr-network/client");
 
-//const Upload = require("../models/upload.model.js");
+const axios = require('axios');
+const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const acceptToken = require("./tokens.js");
 
@@ -110,7 +111,7 @@ exports.upload = async (req, res) => {
 			}
 			res.status(500).send({
 				message:
-					err.message || "Error occurred while looking up status."
+					err.message || "Error occurred while validating quote."
 			});
 		}
 
@@ -123,31 +124,139 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		// check status of quote
+		if(quote.status != Quote.QUOTE_STATUS_WAITING) {
+			if(quote.status == Quote.QUOTE_STATUS_UPLOAD_END) {
+				res.status(400).send({
+					message: "Quote has been completed."
+				});
+				return;
+			}
+			else {
+				res.status(400).send({
+					message: "Quote is being processed."
+				});
+				return;
+			}
+		}
+
 		// check if new price is sufficient
-		const bundlr = new Bundlr.default(process.env.ARWEAVE_GATEWAY_URI, paymentToken, process.env.PRIVATE_KEY);
+		let bundlr;
+		try {
+			bundlr = new Bundlr.default(process.env.ARWEAVE_GATEWAY_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+		}
+		catch(err) {
+			res.status(500).send({
+				message: err.message
+			});
+			return;
+		}	
+
+		//console.log(`Whole quote size: ${quote.size}`);
 
 		const priceWei = await bundlr.getPrice(quote.size);
 		const tokenAmount = bundlr.utils.unitConverter(priceWei);
 
-		if(parseFloat(tokenAmount) > quote.tokenAmount) {
+		if(parseFloat(tokenAmount) > parseFloat(quote.tokenAmount)) {
 			res.status(402).send({
-				message: "Quoted tokenAmount is less than current rate."
+				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${tokenAmount}`
 			});
 			return;
 		}
 
 		res.send(null); // send 200
-		/* TODO:
-			Set quote status to 2
-			Pull WETH from user's account into our EOA using transferFrom(userAddress, amount)
-			Unwrap WETH to ETH
-			Fund our EOA's Bundlr Account using Bundlr.fund()
-			Set quote status to 3
-			Set quote status to 4
-			Download the file(s) from the URI(s)
-			Upload the file(s) to Arweave using Bundlr.upload(file)
-			HEAD request to Arweave Gateway to verify that file uploaded successfully> Note Update quote status in database throughout.
-			Set quote status to 5
-		*/
+
+		// change status
+		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
+
+		// TODO: Pull WETH from user's account into our EOA using transferFrom(userAddress, amount)
+		// TODO: Unwrap WETH to ETH
+
+		// Fund our EOA's Bundlr Account
+		try {
+			let response = await bundlr.fund(priceWei);
+			// TODO: should we record the response values?
+			/* {
+				id: '0x15d26881006589bd3ac5366ebd5031d8c14a2755d962337fad7216744fe92ed5',
+				quantity: '3802172224166296',
+				reward: '45832500525000',
+				target: '0x853758425e953739F5438fd6fd0Efe04A477b039'
+			} */
+		}
+		catch(err) {
+			// can't fund the quote
+			console.log(e);
+			return;
+		}
+
+		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_END);
+		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_START);
+
+		files.forEach(async (file, index) => { // make sure each happens in parallel
+			await Upload.get(quoteId, index, async (err, quotedFile) => {
+				if(err) {
+					console.log(err);
+					return;
+				}
+				//console.log(`Quote index: ${index}, Qoute length: ${quotedFile.length}`);
+
+				// download file
+				await axios({
+						method: "get",
+						url: file,
+						responseType: "arraybuffer"
+					})
+					.then(response => {
+						// download started
+						const contentType = response.headers['content-type'];
+						const httpLength = parseInt(response.headers['content-length']);
+						
+						if(httpLength) {
+							if(httpLength != quotedFile.length) {
+								// quoted size is different than real size
+								console.log(`Different lengths, quoted length = ${quotedFile.length}, http length ${httpLength}`);
+							}
+						}
+
+						let tags = [];
+						if(contentType) {
+							// TODO: sanitize contentType
+							tags = [{name: "Content-Type", value: contentType}];
+						}
+
+						const uploader = bundlr.uploader.chunkedUploader;
+
+						uploader.setChunkSize(524288);
+						uploader.setBatchSize(1);
+
+						uploader.on("chunkUpload", (chunkInfo) => {
+							//console.log(`Uploaded Chunk number ${chunkInfo.id}, offset of ${chunkInfo.offset}, size ${chunkInfo.size} Bytes, with a total of ${chunkInfo.totalUploaded} bytes uploaded.`);
+						});
+						uploader.on("chunkError", (e) => {
+							//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
+						});
+						uploader.on("done", (finishRes) => {
+							//console.log(`Upload completed with ID ${finishRes.data.id}`);
+							Upload.setHash(quoteId, index, finishRes.data.id);
+							// TODO: HEAD request to Arweave Gateway to verify that file uploaded successfully
+							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+						});
+
+						const transactionOptions = {tags: tags};
+						try {
+							// start upload
+							uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
+							// TODO: also hash the file
+						}
+						catch(error) {
+							console.error(error.message);
+						}
+					})
+					.catch(error => {
+						console.log(error);
+					});
+			});
+
+		});
 	});
 };
