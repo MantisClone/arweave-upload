@@ -70,6 +70,6 @@ const register = () => {
 	else {
 		console.log('Skipping registration because DBS_URI == "DEBUG"');
 		// Inject debug code here
-		console.log(getAcceptedPaymentDetails().toString());
+		console.log(JSON.stringify(getAcceptedPaymentDetails()));
 	}
 }

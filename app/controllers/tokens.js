@@ -1,21 +1,56 @@
 const tokens2 = {
-	ethereum: {chainId: 1, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	matic: {chainId: 137, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	bnb: {chainId: 56, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	arbitrum: {chainId: 42161, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	avalanche: {chainId: 43114, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	boba: {chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7"},
-	"boba-eth": {chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000"}
+	ethereum: {
+		chainId: 1,
+		acceptedTokens: [
+			{ETH: "0x0000000000000000000000000000000000000000"}
+		]
+	},
+	matic: {
+		chainId: 137,
+		acceptedTokens: [
+			{MATIC: "0x0000000000000000000000000000000000000000"}
+		]
+	},
+	bnb: {
+		chainId: 56, 
+		acceptedTokens: [
+			{BNB: "0x0000000000000000000000000000000000000000"},
+		]
+	},
+	arbitrum: {
+		chainId: 42161,
+		acceptedTokens: [
+			{ETH: "0x0000000000000000000000000000000000000000"},
+		]
+	},
+	avalanche: {
+		chainId: 43114,
+		acceptedTokens: [
+			{AVAX: "0x0000000000000000000000000000000000000000"},
+		]
+	},
+	boba: {
+		chainId: 288, 
+		acceptedTokens: [
+			{BOBA: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7"},
+		]
+	},
+	"boba-eth": {
+		chainId: 288, 
+		acceptedTokens: [
+			{ETH: "0x0000000000000000000000000000000000000000"},
+		]
+	}
 };
 
 const tokens =[
-	{name: "ethereum", chainId: 1, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	{name: "matic", chainId: 137, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	{name: "bnb", chainId: 56, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	{name: "arbitrum", chainId: 42161, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	{name: "avalanche", chainId: 43114, tokenAddress: "0x0000000000000000000000000000000000000000"},
-	{name: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7"},
-	{name: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000"}
+	{name: "ethereum", chainId: 1, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH"},
+	{name: "matic", chainId: 137, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "MATIC"},
+	{name: "bnb", chainId: 56, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BNB"},
+	{name: "arbitrum", chainId: 42161, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH"},
+	{name: "avalanche", chainId: 43114, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "AVAX"},
+	{name: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7", symbol: "ETH"},
+	{name: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA"}
 ];
 
 acceptToken = (chainId, tokenAddress) => {
@@ -33,10 +68,23 @@ acceptToken = (chainId, tokenAddress) => {
 
 getAcceptedPaymentDetails = () => {
 	const accepted = process.env.ACCEPTED_PAYMENTS.split(",");
-
-	return accepted.map((payment) => {
-		tokens2[payment]
+	const acceptedDetails = accepted.map((payment) => tokens2[payment]);
+	const compressedDetails = [];
+	acceptedDetails.forEach((detail) => {
+		const added = false;
+		compressedDetails.forEach((compressedDetail) => {
+			if(detail.chainId == compressedDetail.chainId) {
+				compressedDetail.acceptedTokens.push({[detail.symbol]: detail.tokenAddress});
+			}
+		})
+		if(!added) {
+			compressedDetails.push({
+				"chainId": detail.chainId,
+				"acceptedTokens": [{[detail.symbol]: detail.tokenAddress}]
+			})
+		}
 	})
+	return compressedDetails;
 }
 
 module.exports = { acceptToken, getAcceptedPaymentDetails };
