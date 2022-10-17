@@ -1,6 +1,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require('cors');
+const axios = require("axios");
+const getAcceptedPaymentDetails = require("./app/controllers/tokens.js");
+
 
 const app = express();
 app.disable('x-powered-by');
@@ -48,6 +51,25 @@ app.listen(PORT, "localhost", () => {
 	registrationTimer.unref()
 });
 
-function register() {
-	console.log('register')
+const register = () => {
+	console.log("Registering with DBS...")
+	if(process.env.DBS_URI !== "DEBUG") {
+		axios.post(`${process.env.DBS_URI}/register`, {
+			type: "arweave",
+			description: "File storage on Arweave",
+			url: process.env.SELF_URI,
+			payment: getAcceptedPaymentDetails(),
+		})
+		.then((response) => {
+			console.log(response);
+		})
+		.catch((error) => {
+			console.error(error);
+		})
+	}
+	else {
+		console.log('Skipping registration because DBS_URI == "DEBUG"');
+		// Inject debug code here
+		console.log(getAcceptedPaymentDetails().toString());
+	}
 }
