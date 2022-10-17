@@ -2,7 +2,7 @@ const Bundlr = require("@bundlr-network/client");
 const crypto = require("crypto");
 
 const Quote = require("../models/quote.model.js");
-const acceptToken = require("./tokens.js");
+const { acceptToken } = require("./tokens.js");
 
 exports.create = async (req, res) => {
 	const addressRegex = /^0x[a-fA-F0-9]{40}$/;

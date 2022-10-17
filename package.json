@@ -14,7 +14,7 @@
 		"restapi"
 	],
 	"author": "David Hunt-Mateo & Corrie Sloot",
-	"license": "ISC",
+	"license": "Apache-2.0",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/MantisClone/arweave-upload.git"
