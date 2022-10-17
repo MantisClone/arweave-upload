@@ -67,20 +67,25 @@ acceptToken = (chainId, tokenAddress) => {
 };
 
 getAcceptedPaymentDetails = () => {
-	const accepted = process.env.ACCEPTED_PAYMENTS.split(",");
-	const acceptedDetails = accepted.map((payment) => tokens2[payment]);
+	const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+	console.log(`acceptedPayments = ${acceptedPayments}`);
+	const acceptedDetails = tokens.filter((token) => acceptedPayments.includes(token.name));
+	console.log(`acceptedDetails = ${JSON.stringify(acceptedDetails)}`);
 	const compressedDetails = [];
 	acceptedDetails.forEach((detail) => {
-		const added = false;
+		let added = false;
+		const acceptedToken = {};
+		acceptedToken[detail.symbol] = detail.tokenAddress;
 		compressedDetails.forEach((compressedDetail) => {
 			if(detail.chainId == compressedDetail.chainId) {
-				compressedDetail.acceptedTokens.push({[detail.symbol]: detail.tokenAddress});
+				compressedDetail.acceptedTokens.push(acceptedToken);
+				added = true;
 			}
 		})
 		if(!added) {
 			compressedDetails.push({
 				"chainId": detail.chainId,
-				"acceptedTokens": [{[detail.symbol]: detail.tokenAddress}]
+				"acceptedTokens": [acceptedToken]
 			})
 		}
 	})
