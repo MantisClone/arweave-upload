@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const axios = require("axios");
-const getAcceptedPaymentDetails = require("./app/controllers/tokens.js");
+const { getAcceptedPaymentDetails } = require("./app/controllers/tokens.js");
 
 
 const app = express();

@@ -39,4 +39,4 @@ getAcceptedPaymentDetails = () => {
 	})
 }
 
-module.exports = acceptToken, getAcceptedPaymentDetails;
+module.exports = { acceptToken, getAcceptedPaymentDetails };
