@@ -54,4 +54,8 @@ getAcceptedPaymentDetails = () => {
 	return compressedDetails;
 };
 
-module.exports = { acceptToken, getAcceptedPaymentDetails };
+getDefaultProviderUrl = (name) => {
+	return tokens.filter((token) => name == token.name).providerUrl;
+}
+
+module.exports = { acceptToken, getAcceptedPaymentDetails, getDefaultProviderUrl };

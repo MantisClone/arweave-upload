@@ -4,7 +4,7 @@ const axios = require('axios');
 const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const ethers = require('ethers');
-const { acceptToken } = require("./tokens.js");
+const { acceptToken, getDefaultProviderUrl } = require("./tokens.js");
 
 exports.upload = async (req, res) => {
 	// Validate request
@@ -151,7 +151,7 @@ exports.upload = async (req, res) => {
 				message: err.message
 			});
 			return;
-		}	
+		}
 
 		//console.log(`Whole quote size: ${quote.size}`);
 
@@ -179,6 +179,17 @@ exports.upload = async (req, res) => {
 
 		// change status
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
+
+		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+		const jsonRpcUris = process.env.JSON_PRC_URIS.split(",");
+		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)]
+		let provider;
+		if(jsonRpcUri === "default") {
+			provider = ethers.getDefaultProvider(getDefaultProviderUrl(paymentToken))
+		}
+		else {
+			provider = ethers.getDefaultProvider(jsonRpcUri)
+		}
 
 		// TODO: Pull WETH from user's account into our EOA using transferFrom(userAddress, amount)
 		// TODO: Unwrap WETH to ETH
@@ -223,7 +234,7 @@ exports.upload = async (req, res) => {
 						// download started
 						const contentType = response.headers['content-type'];
 						const httpLength = parseInt(response.headers['content-length']);
-						
+
 						if(httpLength) {
 							if(httpLength != quotedFile.length) {
 								// quoted size is different than real size
