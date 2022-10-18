@@ -4,8 +4,9 @@ Arweave microservice for DBS
 ```bash
 npm install
 export ACCEPTED_PAYMENTS=ethereum,matic,boba,boba-eth
+export JSON_RPC_URIS=default,default,default,default
 export BUNDLR_URI="https://node1.bundlr.network"
-#export BUNDLR_URI="https://devnet.bundlr.network"
+#export BUNDLR_URI="https://devnet.bundlr.network" # Use Budnlr devnet when interacting with testnets
 export PORT=8081
 export PRIVATE_KEY="0000000000000000000000000000000000000000000000000000000000000000"
 export SQLITE_DB_PATH=/path/to/db/file
