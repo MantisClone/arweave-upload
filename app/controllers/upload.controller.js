@@ -3,7 +3,7 @@ const Bundlr = require("@bundlr-network/client");
 const axios = require('axios');
 const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
-const acceptToken = require("./tokens.js");
+const { acceptToken } = require("./tokens.js");
 
 exports.upload = async (req, res) => {
 	// Validate request
@@ -185,7 +185,7 @@ exports.upload = async (req, res) => {
 		}
 		catch(err) {
 			// can't fund the quote
-			console.log(e);
+			console.log(err);
 			return;
 		}
 
