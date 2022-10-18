@@ -24,3 +24,7 @@ curl -d '{ "quoteId":"60f7d48ccd08653b2ef2edfe4bbe4620", "signature": "0x0000000
 curl -d '{ "type":"arweave", "userAddress": "0x0000000000000000000000000000000000000000", "files": [{"length": 1256}, {"length": 5969}], "payment": {"chainId": 80001, "tokenAddress": "0x0000000000000000000000000000000000001010"} }' -X POST -H 'Content-Type: application/json' http://localhost:8081/getQuote
 curl -d '{ "quoteId":"047a6425546f8e9023e8af0ab47ba99f", "signature": "0x0000000000000000000000000000000000000000", "files": ["https://example.com/", "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png"], "nonce": 0 }' -X POST -H 'Content-Type: application/json' http://localhost:8081/upload
 ```
+
+Example IPFS Hash: `QmcGV8fimB7aeBxnDqr7bSSLUWLeyFKUukGqDhWnvriQ3T`
+File size: 77 bytes
+Source: https://ipfsbrowser.com/
