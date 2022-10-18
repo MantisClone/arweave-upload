@@ -7,7 +7,7 @@ const tokens =[
 	{name: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7", symbol: "ETH"},
 	{name: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA"},
 
-	{name: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", providerUrl: "https://rpc-mumbai.matic.today"}
+	{name: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", providerUrl: "https://rpc-mumbai.maticvigil.com/"}
 ];
 
 acceptToken = (chainId, tokenAddress) => {

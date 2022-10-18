@@ -1,5 +1,6 @@
 const Bundlr = require("@bundlr-network/client");
 const crypto = require("crypto");
+const ethers = require('ethers');
 
 const Quote = require("../models/quote.model.js");
 const { acceptToken } = require("./tokens.js");
@@ -194,7 +195,7 @@ exports.create = async (req, res) => {
 
 	let bundlr;
 	try {
-		bundlr = new Bundlr.default(process.env.ARWEAVE_GATEWAY_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 	}
 	catch(err) {
 		res.status(500).send({
@@ -203,8 +204,19 @@ exports.create = async (req, res) => {
 		return;
 	}	
 
-	const priceWei = await bundlr.getPrice(totalLength);
-	const tokenAmount = bundlr.utils.unitConverter(priceWei) * 1.1; // add 10% buffer since prices fluctuate
+	let priceWei;
+	try {
+		priceWei = await bundlr.getPrice(totalLength);
+		priceWei = ethers.BigNumber.from(priceWei.toString()); // need to convert so we can add buffer
+	}
+	catch(err) {
+		res.status(500).send({
+			message: err.message
+		});
+		return;
+	}
+
+	const tokenAmount = priceWei.add(priceWei.div(10)); // add 10% buffer since prices fluctuate
 
 	// TODO: generate this better
 	const quoteId = crypto.randomBytes(16).toString("hex");
@@ -217,7 +229,7 @@ exports.create = async (req, res) => {
 		chainId: chainId,
 		tokenAddress: tokenAddress,
 		userAddress: userAddress,
-		tokenAmount: parseFloat(tokenAmount).toFixed(18),
+		tokenAmount: tokenAmount.toString(),
 		approveAddress: "0x0000000000000000000000000000000000000000", // TODO: replace with real address
 		files: file_lengths
 
@@ -277,7 +289,7 @@ exports.status = async (req, res) => {
 };
 
 exports.setStatus = async (quoteId, status) => {
-	Quote.getStatus(quoteId, status, (err, data) => {
+	Quote.setStatus(quoteId, status, (err, data) => {
 		if(err) {
 			console.log(err);
 		}

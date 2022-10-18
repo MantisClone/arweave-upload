@@ -11,7 +11,7 @@ const create_quote = `
 		"chainId"	INTEGER NOT NULL,
 		"tokenAddress"	TEXT NOT NULL,
 		"userAddress"	TEXT NOT NULL,
-		"tokenAmount"	REAL,
+		"tokenAmount"	TEXT,
 		"approveAddress"	TEXT NOT NULL,
 		PRIMARY KEY("quoteId")
 	);

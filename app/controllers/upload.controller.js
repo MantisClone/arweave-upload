@@ -3,6 +3,7 @@ const Bundlr = require("@bundlr-network/client");
 const axios = require('axios');
 const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
+const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
 
 exports.upload = async (req, res) => {
@@ -15,7 +16,7 @@ exports.upload = async (req, res) => {
 	}
 
 	// validate fields
-	let quoteId = req.body.quoteId;
+	const quoteId = req.body.quoteId;
 	if(typeof quoteId === "undefined") {
 		res.status(400).send({
 			message: "Missing quoteId."
@@ -29,21 +30,21 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	let nonce = req.body.nonce;
+	const nonce = req.body.nonce;
 	if(typeof nonce === "undefined") {
 		res.status(400).send({
 			message: "Missing nonce."
 		});
 		return;
 	}
-	if(typeof nonce !== "string") {
+	if(typeof nonce !== "number") {
 		res.status(400).send({
 			message: "Invalid nonce."
 		});
 		return;
 	}
 
-	let signature = req.body.signature;
+	const signature = req.body.signature;
 	if(typeof signature === "undefined") {
 		res.status(400).send({
 			message: "Missing signature."
@@ -57,7 +58,7 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	let files = req.body.files;
+	const files = req.body.files;
 	if(typeof files === "undefined") {
 		res.status(400).send({
 			message: "Missing files field."
@@ -87,14 +88,14 @@ exports.upload = async (req, res) => {
 	for(let i = 0; i < files.length; i++) {
 		if(typeof files[i] !== "string") {
 			res.status(400).send({
-				message: "Invalid files field."
+				message: `Invalid files field on index ${i}.`
 			});
 			return;
 		}
 		// TODO: validate URL format better
 		if(!files[i].startsWith('http://') && !files[i].startsWith('https://') && !files[i].startsWith('ipfs://')) {
 			res.status(400).send({
-				message: "Invalid files URI."
+				message: `Invalid files URI on index ${i}.`
 			});
 			return;
 		}
@@ -143,7 +144,7 @@ exports.upload = async (req, res) => {
 		// check if new price is sufficient
 		let bundlr;
 		try {
-			bundlr = new Bundlr.default(process.env.ARWEAVE_GATEWAY_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+			bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 		}
 		catch(err) {
 			res.status(500).send({
@@ -154,10 +155,20 @@ exports.upload = async (req, res) => {
 
 		//console.log(`Whole quote size: ${quote.size}`);
 
-		const priceWei = await bundlr.getPrice(quote.size);
-		const tokenAmount = bundlr.utils.unitConverter(priceWei);
+		let priceWei;
+		try {
+			priceWei = await bundlr.getPrice(quote.size);
+		}
+		catch(err) {
+			res.status(500).send({
+				message: err.message
+			});
+			return;
+		}
 
-		if(parseFloat(tokenAmount) > parseFloat(quote.tokenAmount)) {
+		const quoteTokenAmount = ethers.BigNumber.from(quote.tokenAmount);
+
+		if(priceWei.gte(quoteTokenAmount)) {
 			res.status(402).send({
 				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${tokenAmount}`
 			});
@@ -173,6 +184,7 @@ exports.upload = async (req, res) => {
 		// TODO: Unwrap WETH to ETH
 
 		// Fund our EOA's Bundlr Account
+		// TODO: Check the balance first
 		try {
 			let response = await bundlr.fund(priceWei);
 			// TODO: should we record the response values?
@@ -185,7 +197,8 @@ exports.upload = async (req, res) => {
 		}
 		catch(err) {
 			// can't fund the quote
-			console.log(err);
+			console.log("Can't fund the quote.")
+			console.log(err.message);
 			return;
 		}
 
