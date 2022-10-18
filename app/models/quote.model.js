@@ -13,6 +13,14 @@ const Quote = function(quote) {
 	this.files = quote.files;
 };
 
+// status constants
+Quote.QUOTE_STATUS_NONE = 0;
+Quote.QUOTE_STATUS_WAITING = 1;
+Quote.QUOTE_STATUS_PAYMENT_START = 2;
+Quote.QUOTE_STATUS_PAYMENT_END = 3;
+Quote.QUOTE_STATUS_UPLOAD_START = 4;
+Quote.QUOTE_STATUS_UPLOAD_END = 5;
+
 Quote.create = (newQuote, result) => {
 	const params = [
 		newQuote.quoteId,
@@ -60,7 +68,30 @@ Quote.create = (newQuote, result) => {
 	});
 };
 
-Quote.status = (quoteId, result) => {
+Quote.get = (quoteId, result) => {
+	const quote_sql = `
+		SELECT *, (SELECT SUM(length) FROM files WHERE quoteId = ?) AS 'size'
+		FROM quote
+		WHERE quoteId = ?;
+	`;
+
+	sql.get(quote_sql, [quoteId, quoteId], (err, res) => {
+		if(err) {
+			console.log("error:", err);
+			result(err, null);
+			return;
+		}
+
+		if(!res) {
+			result({"code": 404, "message": "Quote not found"}, null);
+			return;
+		}
+
+		result(null, res);
+	});
+}
+
+Quote.getStatus = (quoteId, result) => {
 	const status_sql = "SELECT status FROM quote WHERE quoteId = ?;";
 
 	sql.get(status_sql, [quoteId], (err, res) => {
@@ -78,5 +109,16 @@ Quote.status = (quoteId, result) => {
 		result(null, res);
 	});
 }
+
+Quote.setStatus = (quoteId, status) => {
+	const quote_sql = 'UPDATE quote SET status = ? WHERE quoteId = ?;'
+	sql.run(quote_sql, [status, quoteId], (err, res) => {
+		if(err) {
+			console.log("error:", err);
+			return;
+		}
+	});
+};
+
 
 module.exports = Quote;

@@ -1,16 +1,12 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cors = require('cors');
 const axios = require("axios");
 const { getAcceptedPaymentDetails } = require("./app/controllers/tokens.js");
-
 
 const app = express();
 app.disable('x-powered-by');
 
 // TODO: validate config
-
-app.use(cors());
 
 app.use(function(req, res, next) {
     next(); // moves to next middleware
@@ -39,7 +35,7 @@ app.get("/robots.txt", (req, res) => {
 });
 
 require("./app/routes/quote.routes.js")(app);
-//require("./app/routes/upload.routes.js")(app);
+require("./app/routes/upload.routes.js")(app);
 
 // set port, listen for requests
 const PORT = process.env.PORT || 8081;

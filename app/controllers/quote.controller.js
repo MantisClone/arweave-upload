@@ -1,5 +1,6 @@
 const Bundlr = require("@bundlr-network/client");
 const crypto = require("crypto");
+const ethers = require('ethers');
 
 const Quote = require("../models/quote.model.js");
 const { acceptToken } = require("./tokens.js");
@@ -192,10 +193,30 @@ exports.create = async (req, res) => {
 		return;
 	}
 
-	const bundlr = new Bundlr.default(process.env.ARWEAVE_GATEWAY_URI, paymentToken, process.env.PRIVATE_KEY);
+	let bundlr;
+	try {
+		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+	}
+	catch(err) {
+		res.status(500).send({
+			message: err.message
+		});
+		return;
+	}	
 
-	const priceWei = await bundlr.getPrice(totalLength);
-	const tokenAmount = bundlr.utils.unitConverter(priceWei);
+	let priceWei;
+	try {
+		priceWei = await bundlr.getPrice(totalLength);
+		priceWei = ethers.BigNumber.from(priceWei.toString()); // need to convert so we can add buffer
+	}
+	catch(err) {
+		res.status(500).send({
+			message: err.message
+		});
+		return;
+	}
+
+	const tokenAmount = priceWei.add(priceWei.div(10)); // add 10% buffer since prices fluctuate
 
 	// TODO: generate this better
 	const quoteId = crypto.randomBytes(16).toString("hex");
@@ -203,12 +224,12 @@ exports.create = async (req, res) => {
 	// save data in database
 	const quote = new Quote({
 		quoteId: quoteId,
-		status: 1, // defaults to 1
+		status: Quote.QUOTE_STATUS_WAITING,
 		created: Date.now(),
 		chainId: chainId,
 		tokenAddress: tokenAddress,
 		userAddress: userAddress,
-		tokenAmount: parseFloat(tokenAmount).toFixed(18),
+		tokenAmount: tokenAmount.toString(),
 		approveAddress: "0x0000000000000000000000000000000000000000", // TODO: replace with real address
 		files: file_lengths
 
@@ -247,7 +268,7 @@ exports.status = async (req, res) => {
 		return;
 	}
 
-	Quote.status(quoteId, (err, data) => {
+	Quote.getStatus(quoteId, (err, data) => {
 		if(err) {
 			if(err.code == 404) {
 				res.status(404).send({
@@ -263,6 +284,14 @@ exports.status = async (req, res) => {
 		else {
 			// send receipt for data
 			res.send(data);
+		}
+	});
+};
+
+exports.setStatus = async (quoteId, status) => {
+	Quote.setStatus(quoteId, status, (err, data) => {
+		if(err) {
+			console.log(err);
 		}
 	});
 };
