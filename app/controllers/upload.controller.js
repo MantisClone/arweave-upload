@@ -181,7 +181,7 @@ exports.upload = async (req, res) => {
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
-		const jsonRpcUris = process.env.JSON_PRC_URIS.split(",");
+		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)]
 		let provider;
 		if(jsonRpcUri === "default") {
