@@ -184,7 +184,6 @@ exports.upload = async (req, res) => {
 		// TODO: Unwrap WETH to ETH
 
 		// Fund our EOA's Bundlr Account
-
 		// TODO: Check the balance first
 		try {
 			let response = await bundlr.fund(priceWei);

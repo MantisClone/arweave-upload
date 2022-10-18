@@ -252,8 +252,6 @@ exports.create = async (req, res) => {
 };
 
 exports.getStatus = async (req, res) => {
-
-
 	if(!req.query || !req.query.quoteId) {
 		res.status(400).send({
 			message: "Error, quoteId required."
