@@ -8,9 +8,6 @@ const { acceptToken } = require("./tokens.js");
 const quoteidRegex = /^[a-fA-F0-9]{32}$/;
 
 exports.create = async (req, res) => {
-	const addressRegex = /^0x[a-fA-F0-9]{40}$/;
-	// TODO: when checking addresses, also check checksum
-
 	// Validate request
 	if(!req.body) {
 		res.status(400).send({
@@ -53,12 +50,10 @@ exports.create = async (req, res) => {
 		});
 		return;
 	}
-
-	if(!addressRegex.test(userAddress)) {
+	if(!ethers.utils.isAddress(userAddress)) {
 		res.status(400).send({
-			message: "Invalid userAddress format."
-		});
-		return;
+			message: "Invalid userAddress."
+		})
 	}
 
 	let files = req.body.files;
@@ -204,7 +199,7 @@ exports.create = async (req, res) => {
 			message: err.message
 		});
 		return;
-	}	
+	}
 
 	let priceWei;
 	try {
@@ -223,6 +218,7 @@ exports.create = async (req, res) => {
 	const quoteId = crypto.randomBytes(16).toString("hex");
 
 	// save data in database
+	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 	const quote = new Quote({
 		quoteId: quoteId,
 		status: Quote.QUOTE_STATUS_WAITING,
@@ -231,7 +227,7 @@ exports.create = async (req, res) => {
 		tokenAddress: tokenAddress,
 		userAddress: userAddress,
 		tokenAmount: tokenAmount.toString(),
-		approveAddress: "0x0000000000000000000000000000000000000000", // TODO: replace with real address
+		approveAddress: wallet.address,
 		files: file_lengths
 
 	});
