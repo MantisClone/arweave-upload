@@ -22,6 +22,7 @@ curl -d '{ "type":"arweave", "userAddress": "0x000000000000000000000000000000000
 curl -d '{ "quoteId":"60f7d48ccd08653b2ef2edfe4bbe4620", "signature": "0x0000000000000000000000000000000000000000", "files": ["https://example.com/", "ipfs://xxx"], "nonce": 0 }' -X POST -H 'Content-Type: application/json' http://localhost:8081/upload
 
 curl -d '{ "type":"arweave", "userAddress": "0x0000000000000000000000000000000000000000", "files": [{"length": 1256}, {"length": 5969}], "payment": {"chainId": 80001, "tokenAddress": "0x0000000000000000000000000000000000001010"} }' -X POST -H 'Content-Type: application/json' http://localhost:8081/getQuote
-curl -d '{ "quoteId":"446baf28865cea09f39c0864ae144b98", "signature": "0x0000000000000000000000000000000000000000", "files": ["https://example.com/", "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png"], "nonce": 0 }' -X POST -H 'Content-Type: application/json' http://localhost:8081/upload
-curl 'http://localhost:8081/getLink?quoteId=446baf28865cea09f39c0864ae144b98&signature=0x0000000000000000000000000000000000000000&nonce=0'
+curl -d '{ "quoteId":"40acc6937e1bd98631f47e7cbda72920", "signature": "0x0000000000000000000000000000000000000000", "files": ["https://example.com/", "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png"], "nonce": 0 }' -X POST -H 'Content-Type: application/json' http://localhost:8081/upload
+curl 'http://localhost:8081/getStatus?quoteId=40acc6937e1bd98631f47e7cbda72920'
+curl 'http://localhost:8081/getLink?quoteId=40acc6937e1bd98631f47e7cbda72920&signature=0x0000000000000000000000000000000000000000&nonce=0'
 ```

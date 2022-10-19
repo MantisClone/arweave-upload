@@ -335,13 +335,13 @@ exports.getLink = async (req, res) => {
 	}
 	if(typeof signature !== "string") {
 		res.status(400).send({
-			message: "Invalid signature."
+			message: "Invalid signature format."
 		});
 		return;
 	}
-	// TODO: check signature
 
-	Quote.getLink(quoteId, (err, data) => {
+	// get userAddress
+	Quote.get(quoteId, (err, data) => {
 		if(err) {
 			if(err.code == 404) {
 				res.status(404).send({
@@ -351,12 +351,49 @@ exports.getLink = async (req, res) => {
 			}
 			res.status(500).send({
 				message:
-					err.message || "Error occurred while looking up status."
+					err.message || "Error occurred while looking up userAddress."
 			});
+			return;
 		}
-		else {
+		const userAddress = data.userAddress;
+		const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quoteId + nonce.toString()));
+		let signerAddress;
+		try {
+			signerAddress = ethers.utils.verifyMessage(message, signature);
+		}
+		catch(err) {
+			res.status(403).send({
+				message: "Invalid signature."
+			});
+			return;
+		}
+
+		if(signerAddress != userAddress) {
+			res.status(403).send({
+				message: "Invalid signature."
+			});
+			return;
+		}
+
+		// signature is good
+
+		// TODO: increase nonce
+		Quote.getLink(quoteId, (err, data) => {
+			if(err) {
+				if(err.code == 404) {
+					res.status(404).send({
+						message: err.message
+					});
+					return;
+				}
+				res.status(500).send({
+					message:
+						err.message || "Error occurred while looking up status."
+				});
+				return;
+			}
 			// send receipt for data
 			res.send(data);
-		}
+		});
 	});
 };
