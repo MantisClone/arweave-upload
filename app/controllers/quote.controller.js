@@ -92,7 +92,13 @@ exports.create = async (req, res) => {
 			});
 			return;
 		}
-		if(files[i].hasOwnProperty("length")) {
+		if(!files[i].hasOwnProperty("length")) {
+			res.status(400).send({
+				message: "Invalid files field."
+			});
+			return;
+		}
+		else {
 			file_length = files[i].length;
 			if(isNaN(file_length) || (typeof file_length !== "number" && typeof(file_length) !== "string") || (typeof file_length === "string" && file_length.trim() === "")) {
 				res.status(400).send({
