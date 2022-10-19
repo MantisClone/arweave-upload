@@ -384,7 +384,7 @@ exports.getLink = async (req, res) => {
 				}
 				res.status(500).send({
 					message:
-						err.message || "Error occurred while looking up status."
+						err.message || "Error occurred while looking up link."
 				});
 				return;
 			}

@@ -3,6 +3,7 @@ const Bundlr = require("@bundlr-network/client");
 const axios = require('axios');
 const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
+const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
 
@@ -115,6 +116,7 @@ exports.upload = async (req, res) => {
 				message:
 					err.message || "Error occurred while validating quote."
 			});
+			return;
 		}
 
 		const userAddress = quote.userAddress;
@@ -136,6 +138,26 @@ exports.upload = async (req, res) => {
 			});
 			return;
 		}
+
+		Nonce.get(userAddress, async (err, data) => {
+			if(err) {
+				res.status(500).send({
+					message:
+						err.message || "Error occurred while validating quote."
+				});
+				return;
+			}
+			if(data) {
+				const old_nonce = data.nonce;
+				if(parseFloat(nonce) <= parseFloat(old_nonce)) {
+					res.status(403).send({
+						message: "Invalid nonce."
+					});
+					return;			
+				}
+			}
+			Nonce.set(userAddress, nonce);
+		});
 
 		// see if token still accepted
 		const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);

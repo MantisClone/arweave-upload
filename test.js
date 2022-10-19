@@ -1,10 +1,5 @@
 const ethers = require('ethers');
-const crypto = require('crypto');
 const axios = require('axios');
-
-//var id = crypto.randomBytes(32).toString('hex');
-//var privateKey = "0x"+id;
-//console.log("SAVE BUT DO NOT SHARE THIS:", privateKey);
 
 async function test() {
 	let quote, nonce, message, signature;
@@ -43,7 +38,7 @@ async function test() {
 		signature: signature,
 	})
 	.then((response) => {
-		console.log("Upload worked");
+		console.log("Upload started");
 	})
 	.catch((error) => {
 		console.error(error);
