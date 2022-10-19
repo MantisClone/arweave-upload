@@ -8,9 +8,6 @@ const { acceptToken } = require("./tokens.js");
 const quoteidRegex = /^[a-fA-F0-9]{32}$/;
 
 exports.create = async (req, res) => {
-	const addressRegex = /^0x[a-fA-F0-9]{40}$/;
-	// TODO: when checking addresses, also check checksum
-
 	// Validate request
 	if(!req.body) {
 		res.status(400).send({
@@ -53,12 +50,10 @@ exports.create = async (req, res) => {
 		});
 		return;
 	}
-
-	if(!addressRegex.test(userAddress)) {
+	if(!ethers.utils.isAddress(userAddress)) {
 		res.status(400).send({
-			message: "Invalid userAddress format."
-		});
-		return;
+			message: "Invalid userAddress."
+		})
 	}
 
 	let files = req.body.files;
