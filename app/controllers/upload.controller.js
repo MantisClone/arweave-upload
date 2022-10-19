@@ -30,36 +30,6 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	const nonce = req.body.nonce;
-	if(typeof nonce === "undefined") {
-		res.status(400).send({
-			message: "Missing nonce."
-		});
-		return;
-	}
-	if(typeof nonce !== "number") {
-		res.status(400).send({
-			message: "Invalid nonce."
-		});
-		return;
-	}
-	// TODO: check nonce
-
-	const signature = req.body.signature;
-	if(typeof signature === "undefined") {
-		res.status(400).send({
-			message: "Missing signature."
-		});
-		return;
-	}
-	if(typeof signature !== "string") {
-		res.status(400).send({
-			message: "Invalid signature."
-		});
-		return;
-	}
-	// TODO: check signature
-
 	const files = req.body.files;
 	if(typeof files === "undefined") {
 		res.status(400).send({
@@ -103,6 +73,35 @@ exports.upload = async (req, res) => {
 		}
 	}
 
+	const nonce = req.body.nonce;
+	if(typeof nonce === "undefined") {
+		res.status(400).send({
+			message: "Missing nonce."
+		});
+		return;
+	}
+	if(typeof nonce !== "number") {
+		res.status(400).send({
+			message: "Invalid nonce."
+		});
+		return;
+	}
+	// TODO: check nonce
+
+	const signature = req.body.signature;
+	if(typeof signature === "undefined") {
+		res.status(400).send({
+			message: "Missing signature."
+		});
+		return;
+	}
+	if(typeof signature !== "string") {
+		res.status(400).send({
+			message: "Invalid signature."
+		});
+		return;
+	}
+
 	// validate quote
 	Quote.get(quoteId, async (err, quote) => {
 		if(err) {
@@ -116,6 +115,26 @@ exports.upload = async (req, res) => {
 				message:
 					err.message || "Error occurred while validating quote."
 			});
+		}
+
+		const userAddress = quote.userAddress;
+		const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quoteId + nonce.toString()));
+		let signerAddress;
+		try {
+			signerAddress = ethers.utils.verifyMessage(message, signature);
+		}
+		catch(err) {
+			res.status(403).send({
+				message: "Invalid signature."
+			});
+			return;
+		}
+
+		if(signerAddress != userAddress) {
+			res.status(403).send({
+				message: "Invalid signature."
+			});
+			return;
 		}
 
 		// see if token still accepted
