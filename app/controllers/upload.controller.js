@@ -205,7 +205,8 @@ exports.upload = async (req, res) => {
 		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_END);
 		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_START);
 
-		files.forEach(async (file, index) => { // make sure each happens in parallel
+		let files_uploaded = 0;
+		await Promise.all(files.map(async (file, index) => {
 			await Upload.get(quoteId, index, async (err, quotedFile) => {
 				if(err) {
 					console.log(err);
@@ -249,10 +250,13 @@ exports.upload = async (req, res) => {
 							//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
 						});
 						uploader.on("done", (finishRes) => {
-							//console.log(`Upload completed with ID ${finishRes.data.id}`);
 							Upload.setHash(quoteId, index, finishRes.data.id);
 							// TODO: HEAD request to Arweave Gateway to verify that file uploaded successfully
-							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+
+							files_uploaded = files_uploaded + 1;
+							if(files_uploaded == files.length) {
+								Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+							}
 						});
 
 						const transactionOptions = {tags: tags};
@@ -269,7 +273,6 @@ exports.upload = async (req, res) => {
 						console.log(error);
 					});
 			});
-
-		});
+		}));
 	});
 };
