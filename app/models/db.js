@@ -29,6 +29,14 @@ const create_files = `
 	);
 `;
 
+const create_nonce = `
+	CREATE TABLE IF NOT EXISTS "nonce" (
+		"userAddress"	TEXT NOT NULL UNIQUE,
+		"nonce"	FLOAT,
+		PRIMARY KEY("userAddress")
+	);
+`;
+
 const db = new sqlite3.Database(db_file, (err) => {
 	if(err) {
 		console.log('Could not connect to database', err);
@@ -62,7 +70,13 @@ const db = new sqlite3.Database(db_file, (err) => {
 						}
 						console.log("Created files table");
 					});
-
+					db.get(create_nonce, [], (err, res) => {
+						if(err) {
+							console.log(err);
+							return false;
+						}
+						console.log("Created nonce table");
+					});
 				}
 			}
 		});
