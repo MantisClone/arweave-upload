@@ -204,7 +204,7 @@ exports.create = async (req, res) => {
 			message: err.message
 		});
 		return;
-	}	
+	}
 
 	let priceWei;
 	try {
@@ -224,6 +224,7 @@ exports.create = async (req, res) => {
 	const quoteId = crypto.randomBytes(16).toString("hex");
 
 	// save data in database
+	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 	const quote = new Quote({
 		quoteId: quoteId,
 		status: Quote.QUOTE_STATUS_WAITING,
@@ -232,7 +233,7 @@ exports.create = async (req, res) => {
 		tokenAddress: tokenAddress,
 		userAddress: userAddress,
 		tokenAmount: tokenAmount.toString(),
-		approveAddress: "0x0000000000000000000000000000000000000000", // TODO: replace with real address
+		approveAddress: wallet.address,
 		files: file_lengths
 
 	});
