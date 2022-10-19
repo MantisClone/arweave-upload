@@ -13,7 +13,7 @@
 		"express",
 		"restapi"
 	],
-	"author": "David Hunt-Mateo & Corrie Sloot",
+	"author": "MantisClone (David Hunt-Mateo) & Corrie Sloot",
 	"license": "Apache-2.0",
 	"repository": {
 		"type": "git",
