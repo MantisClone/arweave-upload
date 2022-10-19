@@ -5,6 +5,8 @@ const ethers = require('ethers');
 const Quote = require("../models/quote.model.js");
 const { acceptToken } = require("./tokens.js");
 
+const quoteidRegex = /^[a-fA-F0-9]{32}$/;
+
 exports.create = async (req, res) => {
 	const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 	// TODO: when checking addresses, also check checksum
@@ -250,8 +252,8 @@ exports.create = async (req, res) => {
 	});
 };
 
-exports.status = async (req, res) => {
-	const quoteidRegex = /^[a-fA-F0-9]{32}$/;
+exports.getStatus = async (req, res) => {
+
 
 	if(!req.query || !req.query.quoteId) {
 		res.status(400).send({
@@ -292,6 +294,72 @@ exports.setStatus = async (quoteId, status) => {
 	Quote.setStatus(quoteId, status, (err, data) => {
 		if(err) {
 			console.log(err);
+		}
+	});
+};
+
+exports.getLink = async (req, res) => {
+	if(!req.query || !req.query.quoteId) {
+		res.status(400).send({
+			message: "Error, quoteId required."
+		});
+		return;
+	}
+	const quoteId = req.query.quoteId;
+
+	if(!quoteidRegex.test(quoteId)) {
+		res.status(400).send({
+			message: "Invalid quoteId format."
+		});
+		return;
+	}
+
+	const nonce = req.query.nonce;
+	if(typeof nonce === "undefined") {
+		res.status(400).send({
+			message: "Missing nonce."
+		});
+		return;
+	}
+	if(typeof nonce !== "string") {
+		res.status(400).send({
+			message: "Invalid nonce."
+		});
+		return;
+	}
+	// TODO: check nonce
+
+	const signature = req.query.signature;
+	if(typeof signature === "undefined") {
+		res.status(400).send({
+			message: "Missing signature."
+		});
+		return;
+	}
+	if(typeof signature !== "string") {
+		res.status(400).send({
+			message: "Invalid signature."
+		});
+		return;
+	}
+	// TODO: check signature
+
+	Quote.getLink(quoteId, (err, data) => {
+		if(err) {
+			if(err.code == 404) {
+				res.status(404).send({
+					message: err.message
+				});
+				return;
+			}
+			res.status(500).send({
+				message:
+					err.message || "Error occurred while looking up status."
+			});
+		}
+		else {
+			// send receipt for data
+			res.send(data);
 		}
 	});
 };

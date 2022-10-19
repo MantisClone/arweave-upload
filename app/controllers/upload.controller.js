@@ -43,6 +43,7 @@ exports.upload = async (req, res) => {
 		});
 		return;
 	}
+	// TODO: check nonce
 
 	const signature = req.body.signature;
 	if(typeof signature === "undefined") {
@@ -57,6 +58,7 @@ exports.upload = async (req, res) => {
 		});
 		return;
 	}
+	// TODO: check signature
 
 	const files = req.body.files;
 	if(typeof files === "undefined") {
