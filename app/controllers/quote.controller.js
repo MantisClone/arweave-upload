@@ -175,7 +175,7 @@ exports.create = async (req, res) => {
 		});
 		return;
 	}
-	if(!addressRegex.test(tokenAddress)) {
+	if(!ethers.utils.isAddress(tokenAddress)) {
 		res.status(400).send({
 			message: "Invalid tokenAddress format."
 		});
