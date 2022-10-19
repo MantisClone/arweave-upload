@@ -3,6 +3,7 @@ const Bundlr = require("@bundlr-network/client");
 const axios = require('axios');
 const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
+const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
 
@@ -29,36 +30,6 @@ exports.upload = async (req, res) => {
 		});
 		return;
 	}
-
-	const nonce = req.body.nonce;
-	if(typeof nonce === "undefined") {
-		res.status(400).send({
-			message: "Missing nonce."
-		});
-		return;
-	}
-	if(typeof nonce !== "number") {
-		res.status(400).send({
-			message: "Invalid nonce."
-		});
-		return;
-	}
-	// TODO: check nonce
-
-	const signature = req.body.signature;
-	if(typeof signature === "undefined") {
-		res.status(400).send({
-			message: "Missing signature."
-		});
-		return;
-	}
-	if(typeof signature !== "string") {
-		res.status(400).send({
-			message: "Invalid signature."
-		});
-		return;
-	}
-	// TODO: check signature
 
 	const files = req.body.files;
 	if(typeof files === "undefined") {
@@ -103,6 +74,35 @@ exports.upload = async (req, res) => {
 		}
 	}
 
+	const nonce = req.body.nonce;
+	if(typeof nonce === "undefined") {
+		res.status(400).send({
+			message: "Missing nonce."
+		});
+		return;
+	}
+	if(typeof nonce !== "number") {
+		res.status(400).send({
+			message: "Invalid nonce."
+		});
+		return;
+	}
+	// TODO: check nonce
+
+	const signature = req.body.signature;
+	if(typeof signature === "undefined") {
+		res.status(400).send({
+			message: "Missing signature."
+		});
+		return;
+	}
+	if(typeof signature !== "string") {
+		res.status(400).send({
+			message: "Invalid signature."
+		});
+		return;
+	}
+
 	// validate quote
 	Quote.get(quoteId, async (err, quote) => {
 		if(err) {
@@ -116,7 +116,48 @@ exports.upload = async (req, res) => {
 				message:
 					err.message || "Error occurred while validating quote."
 			});
+			return;
 		}
+
+		const userAddress = quote.userAddress;
+		const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quoteId + nonce.toString()));
+		let signerAddress;
+		try {
+			signerAddress = ethers.utils.verifyMessage(message, signature);
+		}
+		catch(err) {
+			res.status(403).send({
+				message: "Invalid signature."
+			});
+			return;
+		}
+
+		if(signerAddress != userAddress) {
+			res.status(403).send({
+				message: "Invalid signature."
+			});
+			return;
+		}
+
+		Nonce.get(userAddress, async (err, data) => {
+			if(err) {
+				res.status(500).send({
+					message:
+						err.message || "Error occurred while validating quote."
+				});
+				return;
+			}
+			if(data) {
+				const old_nonce = data.nonce;
+				if(parseFloat(nonce) <= parseFloat(old_nonce)) {
+					res.status(403).send({
+						message: "Invalid nonce."
+					});
+					return;			
+				}
+			}
+			Nonce.set(userAddress, nonce);
+		});
 
 		// see if token still accepted
 		const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
@@ -154,8 +195,6 @@ exports.upload = async (req, res) => {
 			});
 			return;
 		}	
-
-		//console.log(`Whole quote size: ${quote.size}`);
 
 		let priceWei;
 		try {
@@ -207,7 +246,8 @@ exports.upload = async (req, res) => {
 		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_END);
 		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_START);
 
-		files.forEach(async (file, index) => { // make sure each happens in parallel
+		let files_uploaded = 0;
+		await Promise.all(files.map(async (file, index) => {
 			await Upload.get(quoteId, index, async (err, quotedFile) => {
 				if(err) {
 					console.log(err);
@@ -251,10 +291,13 @@ exports.upload = async (req, res) => {
 							//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
 						});
 						uploader.on("done", (finishRes) => {
-							//console.log(`Upload completed with ID ${finishRes.data.id}`);
 							Upload.setHash(quoteId, index, finishRes.data.id);
 							// TODO: HEAD request to Arweave Gateway to verify that file uploaded successfully
-							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+
+							files_uploaded = files_uploaded + 1;
+							if(files_uploaded == files.length) {
+								Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+							}
 						});
 
 						const transactionOptions = {tags: tags};
@@ -271,7 +314,6 @@ exports.upload = async (req, res) => {
 						console.log(error);
 					});
 			});
-
-		});
+		}));
 	});
 };
