@@ -191,8 +191,8 @@ exports.upload = async (req, res) => {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
 		}
 
-		// TODO: Pull WETH from user's account into our EOA using transferFrom(userAddress, amount)
-		// TODO: Unwrap WETH to ETH
+		// TODO: Pull WETH or WMATIC from user's account into our EOA using transferFrom(userAddress, amount)
+		// TODO: Unwrap WETH to ETH or WMATIC to MATIC
 
 		// Fund our EOA's Bundlr Account
 		// TODO: Check the balance first
