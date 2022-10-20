@@ -41,31 +41,29 @@ require("./app/routes/upload.routes.js")(app);
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, "localhost", () => {
 	console.log(`API Server is running at http://localhost:${PORT}/`);
-	register();
-	const registrationTimer = setInterval(register, process.env.REGISTRATION_INTERVAL)
-	// Don't call timeout if it is the last code to execute, won't keep process alive.
-	registrationTimer.unref()
+	if(process.env.DBS_URI !== "DEBUG") {
+		register();
+		const registrationTimer = setInterval(register, process.env.REGISTRATION_INTERVAL)
+		// Don't call timeout if it is the last code to execute, won't keep process alive.
+		registrationTimer.unref()
+	}
+	else {
+		console.log('Registration disabled because DBS_URI == "DEBUG"');
+	}
 });
 
 const register = () => {
 	console.log("Registering with DBS...")
-	if(process.env.DBS_URI !== "DEBUG") {
-		axios.post(`${process.env.DBS_URI}/register`, {
-			type: "arweave",
-			description: "File storage on Arweave",
-			url: process.env.SELF_URI,
-			payment: getAcceptedPaymentDetails(),
-		})
-		.then((response) => {
-			console.log(response);
-		})
-		.catch((error) => {
-			console.error(error);
-		})
-	}
-	else {
-		console.log('Skipping registration because DBS_URI == "DEBUG"');
-		// Inject debug code here
-		// console.log(JSON.stringify(getAcceptedPaymentDetails()));
-	}
+	axios.post(`${process.env.DBS_URI}/register`, {
+		type: "arweave",
+		description: "File storage on Arweave",
+		url: process.env.SELF_URI,
+		payment: getAcceptedPaymentDetails(),
+	})
+	.then((response) => {
+		console.log(response);
+	})
+	.catch((error) => {
+		console.error(error);
+	})
 }

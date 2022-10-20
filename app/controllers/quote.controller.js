@@ -5,10 +5,9 @@ const ethers = require('ethers');
 const Quote = require("../models/quote.model.js");
 const { acceptToken } = require("./tokens.js");
 
-exports.create = async (req, res) => {
-	const addressRegex = /^0x[a-fA-F0-9]{40}$/;
-	// TODO: when checking addresses, also check checksum
+const quoteidRegex = /^[a-fA-F0-9]{32}$/;
 
+exports.create = async (req, res) => {
 	// Validate request
 	if(!req.body) {
 		res.status(400).send({
@@ -51,12 +50,10 @@ exports.create = async (req, res) => {
 		});
 		return;
 	}
-
-	if(!addressRegex.test(userAddress)) {
+	if(!ethers.utils.isAddress(userAddress)) {
 		res.status(400).send({
-			message: "Invalid userAddress format."
-		});
-		return;
+			message: "Invalid userAddress."
+		})
 	}
 
 	let files = req.body.files;
@@ -95,7 +92,13 @@ exports.create = async (req, res) => {
 			});
 			return;
 		}
-		if(files[i].hasOwnProperty("length")) {
+		if(!files[i].hasOwnProperty("length")) {
+			res.status(400).send({
+				message: "Invalid files field."
+			});
+			return;
+		}
+		else {
 			file_length = files[i].length;
 			if(isNaN(file_length) || (typeof file_length !== "number" && typeof(file_length) !== "string") || (typeof file_length === "string" && file_length.trim() === "")) {
 				res.status(400).send({
@@ -178,7 +181,7 @@ exports.create = async (req, res) => {
 		});
 		return;
 	}
-	if(!addressRegex.test(tokenAddress)) {
+	if(!ethers.utils.isAddress(tokenAddress)) {
 		res.status(400).send({
 			message: "Invalid tokenAddress format."
 		});
@@ -202,7 +205,7 @@ exports.create = async (req, res) => {
 			message: err.message
 		});
 		return;
-	}	
+	}
 
 	let priceWei;
 	try {
@@ -215,13 +218,13 @@ exports.create = async (req, res) => {
 		});
 		return;
 	}
-
 	const tokenAmount = priceWei.add(priceWei.div(10)); // add 10% buffer since prices fluctuate
 
 	// TODO: generate this better
 	const quoteId = crypto.randomBytes(16).toString("hex");
 
 	// save data in database
+	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 	const quote = new Quote({
 		quoteId: quoteId,
 		status: Quote.QUOTE_STATUS_WAITING,
@@ -230,7 +233,7 @@ exports.create = async (req, res) => {
 		tokenAddress: tokenAddress,
 		userAddress: userAddress,
 		tokenAmount: tokenAmount.toString(),
-		approveAddress: "0x0000000000000000000000000000000000000000", // TODO: replace with real address
+		approveAddress: wallet.address,
 		files: file_lengths
 
 	});
@@ -250,9 +253,7 @@ exports.create = async (req, res) => {
 	});
 };
 
-exports.status = async (req, res) => {
-	const quoteidRegex = /^[a-fA-F0-9]{32}$/;
-
+exports.getStatus = async (req, res) => {
 	if(!req.query || !req.query.quoteId) {
 		res.status(400).send({
 			message: "Error, quoteId required."
@@ -293,5 +294,108 @@ exports.setStatus = async (quoteId, status) => {
 		if(err) {
 			console.log(err);
 		}
+	});
+};
+
+exports.getLink = async (req, res) => {
+	if(!req.query || !req.query.quoteId) {
+		res.status(400).send({
+			message: "Error, quoteId required."
+		});
+		return;
+	}
+	const quoteId = req.query.quoteId;
+
+	if(!quoteidRegex.test(quoteId)) {
+		res.status(400).send({
+			message: "Invalid quoteId format."
+		});
+		return;
+	}
+
+	const nonce = req.query.nonce;
+	if(typeof nonce === "undefined") {
+		res.status(400).send({
+			message: "Missing nonce."
+		});
+		return;
+	}
+	if(typeof nonce !== "string") {
+		res.status(400).send({
+			message: "Invalid nonce."
+		});
+		return;
+	}
+	// TODO: check nonce
+
+	const signature = req.query.signature;
+	if(typeof signature === "undefined") {
+		res.status(400).send({
+			message: "Missing signature."
+		});
+		return;
+	}
+	if(typeof signature !== "string") {
+		res.status(400).send({
+			message: "Invalid signature format."
+		});
+		return;
+	}
+
+	// get userAddress
+	Quote.get(quoteId, (err, data) => {
+		if(err) {
+			if(err.code == 404) {
+				res.status(404).send({
+					message: err.message
+				});
+				return;
+			}
+			res.status(500).send({
+				message:
+					err.message || "Error occurred while looking up userAddress."
+			});
+			return;
+		}
+		const userAddress = data.userAddress;
+		const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quoteId + nonce.toString()));
+		let signerAddress;
+		try {
+			signerAddress = ethers.utils.verifyMessage(message, signature);
+		}
+		catch(err) {
+			res.status(403).send({
+				message: "Invalid signature."
+			});
+			return;
+		}
+
+		if(signerAddress != userAddress) {
+			res.status(403).send({
+				message: "Invalid signature."
+			});
+			return;
+		}
+
+		// signature is good
+
+		// TODO: increase nonce
+		Quote.getLink(quoteId, (err, data) => {
+			if(err) {
+				if(err.code == 404) {
+					res.status(404).send({
+						message: err.message
+					});
+					return;
+				}
+				res.status(500).send({
+					message:
+						err.message || "Error occurred while looking up link."
+				});
+				return;
+			}
+			// send receipt for data
+			res.send(data);
+		});
 	});
 };

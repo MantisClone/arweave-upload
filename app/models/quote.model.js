@@ -120,5 +120,44 @@ Quote.setStatus = (quoteId, status) => {
 	});
 };
 
+Quote.getLink = (quoteId, result) => {
+	// check status
+	Quote.getStatus(quoteId, (err, data) => {
+		if(err) {
+			if(err.code == 404) {
+				console.log(`Can't find quote ${quoteID}`);
+				result({"code": 404, "message": "Quote not found"}, null);
+				return;
+			}
+			console.log("error:", err);
+			result(err, null);
+			return;
+		}
+		if(data.status != Quote.QUOTE_STATUS_UPLOAD_END) {
+			result({"code": 404, "message": "Upload not completed yet."}, null);
+			return;
+		}
+
+		const query = `SELECT "arweave" AS "type", transactionHash
+			FROM files
+			WHERE quoteId = ?
+			ORDER BY "index" ASC;`;
+
+		sql.all(query, [quoteId], (err, rows) => {
+			if(err) {
+				console.log("error:", err);
+				result(err, null);
+				return;
+			}
+
+			if(!rows) {
+				result({"code": 404, "message": "No transaction hashes found"}, null);
+				return;
+			}
+
+			result(null, rows);
+		});
+	});
+};
 
 module.exports = Quote;
