@@ -241,6 +241,8 @@ exports.upload = async (req, res) => {
 		const tx = await wrapper.transferFrom({src: userAddress, dst: wallet.address, wad: priceWei});
 		const txReceipt = tx.wait()
 
+		console.log(`txReceipt = ${JSON.stringify(txReceipt)}`);
+
 		// TODO: Unwrap WETH to ETH or WMATIC to MATIC
 
 		// Fund our EOA's Bundlr Account
