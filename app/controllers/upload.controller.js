@@ -242,13 +242,13 @@ exports.upload = async (req, res) => {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
 		}
 
-		console.log(`provider = ${provider}`);
+		console.log(`provider = ${provider.toString()}`);
 
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 		const abi = [
 			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
 		];
-		const wrapper = ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
+		const wrapper = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
 
 		console.log(`wrapper = ${wrapper}`);
 
