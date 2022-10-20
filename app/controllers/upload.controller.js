@@ -234,7 +234,9 @@ exports.upload = async (req, res) => {
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)]
 		let provider;
 		if(jsonRpcUri === "default") {
-			provider = ethers.getDefaultProvider(getDefaultProviderUrl(quote.chainId, quote.tokenAddress))
+			const defaultProviderUrl = getDefaultProviderUrl(quote.chainId, quote.tokenAddress);
+			console.log(`Using default providerUrl = ${defaultProviderUrl}`);
+			provider = ethers.getDefaultProvider(defaultProviderUrl)
 		}
 		else {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
