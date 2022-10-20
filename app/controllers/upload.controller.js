@@ -258,7 +258,7 @@ exports.upload = async (req, res) => {
 			const txReceipt = tx.wait()
 		}
 		catch(err) {
-			console.log(`ERROR! ${err}`);
+			console.log(`${err}`);
 			await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
 			return;
 		}

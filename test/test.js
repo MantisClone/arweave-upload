@@ -56,6 +56,8 @@ describe("DBS Arweave Upload", () => {
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
+            console.log("Hello world");
+
             expect(status).to.be.equal(5);
         });
     });
