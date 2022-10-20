@@ -46,6 +46,18 @@ describe("DBS Arweave Upload", () => {
             });
 
             expect(uploadResponse.status).to.be.equal(200);
+
+            // getStatus
+            let status
+            for(let i = 0; i < 15; i++) {
+                status = await axios.get(`http://localhost:8081/getStatus`, {
+                    quoteId: quote.quoteId
+                }).data.status;
+                if(status === 5) break;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            expect(status).to.be.equal(5);
         });
     });
 
