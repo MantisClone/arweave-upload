@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const ethers = require('ethers');
 
 const Quote = require("../models/quote.model.js");
+const Nonce = require("../models/nonce.model.js");
 const { acceptToken } = require("./tokens.js");
 
 const quoteidRegex = /^[a-fA-F0-9]{32}$/;
@@ -326,7 +327,6 @@ exports.getLink = async (req, res) => {
 		});
 		return;
 	}
-	// TODO: check nonce
 
 	const signature = req.query.signature;
 	if(typeof signature === "undefined") {
@@ -377,25 +377,42 @@ exports.getLink = async (req, res) => {
 			return;
 		}
 
-		// signature is good
-
-		// TODO: increase nonce
-		Quote.getLink(quoteId, (err, data) => {
+		Nonce.get(userAddress, async (err, data) => {
 			if(err) {
-				if(err.code == 404) {
-					res.status(404).send({
-						message: err.message
-					});
-					return;
-				}
 				res.status(500).send({
 					message:
-						err.message || "Error occurred while looking up link."
+						err.message || "Error occurred while validating nonce."
 				});
 				return;
 			}
-			// send receipt for data
-			res.send(data);
+			if(data) {
+				const old_nonce = data.nonce;
+				if(parseFloat(nonce) <= parseFloat(old_nonce)) {
+					res.status(403).send({
+						message: "Invalid nonce."
+					});
+					return;
+				}
+			}
+			Nonce.set(userAddress, nonce);
+
+			Quote.getLink(quoteId, (err, data) => {
+				if(err) {
+					if(err.code == 404) {
+						res.status(404).send({
+							message: err.message
+						});
+						return;
+					}
+					res.status(500).send({
+						message:
+							err.message || "Error occurred while looking up link."
+					});
+					return;
+				}
+				// send receipt for data
+				res.send(data);
+			});
 		});
 	});
 };

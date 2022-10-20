@@ -143,7 +143,7 @@ exports.upload = async (req, res) => {
 			if(err) {
 				res.status(500).send({
 					message:
-						err.message || "Error occurred while validating quote."
+						err.message || "Error occurred while validating nonce."
 				});
 				return;
 			}
@@ -153,7 +153,7 @@ exports.upload = async (req, res) => {
 					res.status(403).send({
 						message: "Invalid nonce."
 					});
-					return;			
+					return;
 				}
 			}
 			Nonce.set(userAddress, nonce);
