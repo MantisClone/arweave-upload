@@ -58,6 +58,7 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
+	const cidRegex = /^(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,}|F[0-9A-F]{50,})$/i;
 	for(let i = 0; i < files.length; i++) {
 		if(typeof files[i] !== "string") {
 			res.status(400).send({
@@ -66,9 +67,15 @@ exports.upload = async (req, res) => {
 			return;
 		}
 		// TODO: validate URL format better
-		if(!files[i].startsWith('http://') && !files[i].startsWith('https://') && !files[i].startsWith('ipfs://')) {
+		if(!files[i].startsWith('ipfs://')) {
 			res.status(400).send({
-				message: `Invalid files URI on index ${i}.`
+				message: `Invalid files URI on index ${i}. Must be ipfs://<CID>`
+			});
+			return;
+		}
+		if(!cidRegex.test(files[i].substring(7))) {
+			res.status(400).send({
+				message: `Invalid files URI on index ${i}. Must be ipfs://<CID>`
 			});
 			return;
 		}
@@ -143,7 +150,7 @@ exports.upload = async (req, res) => {
 			if(err) {
 				res.status(500).send({
 					message:
-						err.message || "Error occurred while validating quote."
+						err.message || "Error occurred while validating nonce."
 				});
 				return;
 			}
@@ -273,12 +280,13 @@ exports.upload = async (req, res) => {
 					console.log(err);
 					return;
 				}
-				//console.log(`Quote index: ${index}, Qoute length: ${quotedFile.length}`);
+				// TODO: get IPFS gateway from config
+				const ipfsFile = `https://cloudflare-ipfs.com/ipfs/${file.substring(7)}`;
 
 				// download file
 				await axios({
 						method: "get",
-						url: file,
+						url: ipfsFile,
 						responseType: "arraybuffer"
 					})
 					.then(response => {
@@ -311,13 +319,25 @@ exports.upload = async (req, res) => {
 							//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
 						});
 						uploader.on("done", (finishRes) => {
-							Upload.setHash(quoteId, index, finishRes.data.id);
-							// TODO: HEAD request to Arweave Gateway to verify that file uploaded successfully
+							const transactionId = finishRes.data.id;
+							Upload.setHash(quoteId, index, transactionId);
 
-							files_uploaded = files_uploaded + 1;
-							if(files_uploaded == files.length) {
-								Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+							// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
+							try {
+								axios.head(`https://arweave.net/${transactionId}`);
+
+								files_uploaded = files_uploaded + 1;
+								if(files_uploaded == files.length) {
+									Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+								}
+
 							}
+							catch(err) {
+								// transactionId not found
+								console.log(`Unable to retreive uploaded file with transaction id ${transactionId}, error: ${err.response.status}`);
+							}
+
+
 						});
 
 						const transactionOptions = {tags: tags};
