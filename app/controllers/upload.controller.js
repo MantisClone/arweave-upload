@@ -252,7 +252,7 @@ exports.upload = async (req, res) => {
 
 		console.log(`wrapper = ${wrapper}`);
 
-		const tx = await wrapper.transferFrom(userAddress, wallet.address, priceWei);
+		const tx = await wrapper.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
 
 		console.log(`tx = ${tx}`);
 
