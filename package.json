@@ -5,7 +5,7 @@
 	"main": "server.js",
 	"scripts": {
 		"start": "node server.js",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "mocha"
 	},
 	"keywords": [
 		"arweave",
@@ -13,7 +13,7 @@
 		"express",
 		"restapi"
 	],
-	"author": "David Hunt-Mateo & Corrie Sloot",
+	"author": "MantisClone (David Hunt-Mateo) & Corrie Sloot",
 	"license": "Apache-2.0",
 	"repository": {
 		"type": "git",
@@ -33,5 +33,9 @@
 		"express": "^4.17.1",
 		"fs": "0.0.1-security",
 		"sqlite3": "^5.1.2"
+	},
+	"devDependencies": {
+		"chai": "^4.3.6",
+		"mocha": "^10.1.0"
 	}
 }
