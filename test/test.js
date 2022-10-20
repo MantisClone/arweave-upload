@@ -2,11 +2,11 @@ const ethers = require("ethers");
 const axios = require("axios");
 const { use, expect } = require("chai");
 
-describe("DBS Arweave Upload", () => {
+describe("DBS Arweave Upload", function () {
     const wallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY);
     console.log("Alice address: " + wallet.address);
-    describe("getQuote", () => {
-        it("should return quote ID", async () => {
+    describe("getQuote", function () {
+        it("should return quote ID", async function () {
             const response = await axios.post(`http://localhost:8081/getQuote`, {
                 type: "arweave",
                 userAddress: wallet.address,
@@ -20,9 +20,9 @@ describe("DBS Arweave Upload", () => {
         });
     });
 
-    describe("upload", () => {
+    describe("upload", function () {
 
-        it("should pull funds from user account.", async () => {
+        it("should pull funds from user account.", async function () {
             const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
                 type: "arweave",
                 userAddress: wallet.address,
