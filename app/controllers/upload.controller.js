@@ -291,13 +291,25 @@ exports.upload = async (req, res) => {
 							//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
 						});
 						uploader.on("done", (finishRes) => {
-							Upload.setHash(quoteId, index, finishRes.data.id);
-							// TODO: HEAD request to Arweave Gateway to verify that file uploaded successfully
+							const transactionId = finishRes.data.id;
+							Upload.setHash(quoteId, index, transactionId);
 
-							files_uploaded = files_uploaded + 1;
-							if(files_uploaded == files.length) {
-								Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+							// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
+							try {
+								axios.head(`https://arweave.net/${transactionId}`);
+
+								files_uploaded = files_uploaded + 1;
+								if(files_uploaded == files.length) {
+									Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+								}
+
 							}
+							catch(err) {
+								// transactionId not found
+								console.log(`Unable to retreive uploaded file with transaction id ${transactionId}, error: ${err.response.status}`);
+							}
+
+
 						});
 
 						const transactionOptions = {tags: tags};
