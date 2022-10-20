@@ -61,6 +61,8 @@ describe("DBS Arweave Upload", function () {
             console.log("Hello world");
             expect(true).to.be.equal(false);
             expect(status).to.be.equal(5);
+
+            done();
         });
     });
 
