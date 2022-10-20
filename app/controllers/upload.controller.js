@@ -252,11 +252,20 @@ exports.upload = async (req, res) => {
 
 		console.log(`wrapper = ${wrapper}`);
 
-		const tx = await wrapper.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
+		try {
+			const tx = await wrapper.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
+			console.log(`tx = ${tx}`);
+			const txReceipt = tx.wait()
+		}
+		catch(err) {
+			console.log(err)
+			res.status(400).send({
+				message: "TODO"
+			});
+			return;
+		}
 
-		console.log(`tx = ${tx}`);
 
-		const txReceipt = tx.wait()
 
 		console.log(`txReceipt = ${JSON.stringify(txReceipt)}`);
 
