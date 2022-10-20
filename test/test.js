@@ -45,7 +45,7 @@ describe("DBS Arweave Upload", () => {
                 signature: signature,
             });
 
-            expect(uploadResponse.status).to.be.equal(300);
+            expect(uploadResponse.status).to.be.equal(200);
         });
     });
 
