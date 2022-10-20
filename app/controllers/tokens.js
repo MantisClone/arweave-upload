@@ -8,7 +8,7 @@ const tokens =[
 	{name: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7", symbol: "ETH", providerUrl: "https://mainnet.boba.network/"},
 	{name: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA", providerUrl: "https://mainnet.boba.network/"},
 	// Testnets, used with devnet Bundlr URI. See for details: https://docs.bundlr.network/docs/devnet
-	{name: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", symbol: "MATIC", providerUrl: "https://rpc-mumbai.maticvigil.com/"}
+	{name: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", symbol: "MATIC", providerUrl: "https://rpc-mumbai.maticvigil.com/", wrappedAddress: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889"}
 ];
 
 acceptToken = (chainId, tokenAddress) => {
@@ -54,8 +54,8 @@ getAcceptedPaymentDetails = () => {
 	return compressedDetails;
 };
 
-getDefaultProviderUrl = (name) => {
-	return tokens.filter((token) => name == token.name).providerUrl;
+getDefaultProviderUrl = (chainId, tokenAddress) => {
+	return tokens.filter((token) => chainId === token.chainId && tokenAddress === token.tokenAddress).providerUrl;
 }
 
 module.exports = { acceptToken, getAcceptedPaymentDetails, getDefaultProviderUrl };

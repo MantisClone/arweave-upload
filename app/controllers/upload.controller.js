@@ -153,7 +153,7 @@ exports.upload = async (req, res) => {
 					res.status(403).send({
 						message: "Invalid nonce."
 					});
-					return;			
+					return;
 				}
 			}
 			Nonce.set(userAddress, nonce);
@@ -221,18 +221,26 @@ exports.upload = async (req, res) => {
 		// change status
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 
+		// Pull WETH or WMATIC from user's account into our EOA using transferFrom(userAddress, amount)
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)]
 		let provider;
 		if(jsonRpcUri === "default") {
-			provider = ethers.getDefaultProvider(getDefaultProviderUrl(paymentToken))
+			provider = ethers.getDefaultProvider(getDefaultProviderUrl(quote.chainId, quote.tokenAddress))
 		}
 		else {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
 		}
+		const signer = provider.getSigner()
+		const abi = [
+			'function transferFrom(address src, address dst, uint256 wad) external returns (bool)',
+		];
+		const wrapper = ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, signer);
+		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
+		const tx = await wrapper.transferFrom({src: userAddress, dst: wallet.address, wad: priceWei});
+		const txReceipt = tx.wait()
 
-		// TODO: Pull WETH or WMATIC from user's account into our EOA using transferFrom(userAddress, amount)
 		// TODO: Unwrap WETH to ETH or WMATIC to MATIC
 
 		// Fund our EOA's Bundlr Account
