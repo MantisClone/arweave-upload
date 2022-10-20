@@ -58,6 +58,7 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
+	const cidRegex = /^(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,}|F[0-9A-F]{50,})$/i;
 	for(let i = 0; i < files.length; i++) {
 		if(typeof files[i] !== "string") {
 			res.status(400).send({
@@ -66,9 +67,15 @@ exports.upload = async (req, res) => {
 			return;
 		}
 		// TODO: validate URL format better
-		if(!files[i].startsWith('http://') && !files[i].startsWith('https://') && !files[i].startsWith('ipfs://')) {
+		if(!files[i].startsWith('ipfs://')) {
 			res.status(400).send({
-				message: `Invalid files URI on index ${i}.`
+				message: `Invalid files URI on index ${i}. Must be ipfs://<CID>`
+			});
+			return;
+		}
+		if(!cidRegex.test(files[i].substring(7))) {
+			res.status(400).send({
+				message: `Invalid files URI on index ${i}. Must be ipfs://<CID>`
 			});
 			return;
 		}
@@ -253,12 +260,13 @@ exports.upload = async (req, res) => {
 					console.log(err);
 					return;
 				}
-				//console.log(`Quote index: ${index}, Qoute length: ${quotedFile.length}`);
+				// TODO: get IPFS gateway from config
+				const ipfsFile = `https://cloudflare-ipfs.com/ipfs/${file.substring(7)}`;
 
 				// download file
 				await axios({
 						method: "get",
-						url: file,
+						url: ipfsFile,
 						responseType: "arraybuffer"
 					})
 					.then(response => {

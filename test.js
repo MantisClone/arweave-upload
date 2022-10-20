@@ -11,7 +11,7 @@ async function test() {
 	await axios.post(`http://localhost:8081/getQuote`, {
 		type: "arweave",
 		userAddress: wallet.address,
-		files: [{length: 1256}, {length: 5969}],
+		files: [{length: 119762}, {length: 13}],
 		payment: {
 			chainId: 80001,
 			tokenAddress: "0x0000000000000000000000000000000000001010",
@@ -33,7 +33,7 @@ async function test() {
 
 	await axios.post(`http://localhost:8081/upload`, {
 		quoteId: quote.quoteId,
-		files: ["https://example.com/", "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png"],
+		files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
 		nonce: nonce,
 		signature: signature,
 	})
