@@ -218,12 +218,10 @@ exports.upload = async (req, res) => {
 
 		res.send(null); // send 200
 
-		console.log("Hello World");
-
 		// change status
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 
-		// Pull WETH or WMATIC from user's account into our EOA using transferFrom(userAddress, amount)
+		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)]
@@ -234,18 +232,17 @@ exports.upload = async (req, res) => {
 		else {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
 		}
-		const signer = provider.getSigner()
+		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 		const abi = [
-			'function transferFrom(address src, address dst, uint256 wad) external returns (bool)',
+			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
 		];
-		const wrapper = ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, signer);
-		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
-		const tx = await wrapper.transferFrom({src: userAddress, dst: wallet.address, wad: priceWei});
+		const wrapper = ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
+		const tx = await wrapper.transferFrom({from: userAddress, to: wallet.address, value: priceWei});
 		const txReceipt = tx.wait()
 
 		console.log(`txReceipt = ${JSON.stringify(txReceipt)}`);
 
-		// TODO: Unwrap WETH to ETH or WMATIC to MATIC
+		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
 
 		// Fund our EOA's Bundlr Account
 		// TODO: Check the balance first
