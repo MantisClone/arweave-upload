@@ -218,6 +218,8 @@ exports.upload = async (req, res) => {
 
 		res.send(null); // send 200
 
+		console.log("Hello World");
+
 		// change status
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 
