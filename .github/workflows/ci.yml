@@ -31,7 +31,7 @@ jobs:
       run: npm ci
 
     - name: Run dbs_arweave
-      run: npm start > dbs_arweave.log &
+      run: npm start &
       env:
         ACCEPTED_PAYMENTS: ethereum,matic,boba,boba-eth
         BUNDLR_URI: https://devnet.bundlr.network
@@ -49,6 +49,3 @@ jobs:
       run: npm test
       env:
         TEST_PRIVATE_KEY: ${{ secrets.TEST_PRIVATE_KEY }}
-
-    - name: Print dbs_arweave.log
-      run: cat dbs_arweave.log
