@@ -30,9 +30,13 @@ jobs:
     - name: Clean install
       run: npm ci
 
-    - name: Run dbs_arweave
-      run: npm start &
+    - name: Run tests
+      run: |
+        npm start &
+        sleep 5
+        npm test
       env:
+        # Server env vars
         ACCEPTED_PAYMENTS: ethereum,matic,boba,boba-eth
         BUNDLR_URI: https://devnet.bundlr.network
         PORT: 8081
@@ -41,11 +45,5 @@ jobs:
         REGISTRATION_INTERVAL: 300000
         DBS_URI: DEBUG
         SELF_URI: https://localhost
-
-    - name: Wait for dbs_arweave to start
-      run: sleep 5
-
-    - name: Run tests
-      run: npm test
-      env:
+        # Test env var
         TEST_PRIVATE_KEY: ${{ secrets.TEST_PRIVATE_KEY }}
