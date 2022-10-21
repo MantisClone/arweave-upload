@@ -234,11 +234,13 @@ exports.upload = async (req, res) => {
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)]
 		let provider;
 		if(jsonRpcUri === "default") {
+			console.log("default string detected.")
 			const defaultProviderUrl = getDefaultProviderUrl(quote.chainId, quote.tokenAddress);
 			provider = ethers.getDefaultProvider(defaultProviderUrl)
 		}
 		else {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
+			console.log("default string NOT detected.")
 		}
 
 		console.log(`network = ${JSON.stringify(await provider.ready)}`);
