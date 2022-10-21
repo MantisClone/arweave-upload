@@ -55,7 +55,14 @@ getAcceptedPaymentDetails = () => {
 };
 
 getDefaultProviderUrl = (chainId, tokenAddress) => {
-	return tokens.filter((token) => chainId === token.chainId && tokenAddress === token.tokenAddress).providerUrl;
-}
+	return tokens.filter((token) => {
+		console.log(chainId);
+		console.log(tokenAddress);
+		console.log(token);
+		if(chainId === token.chainId && tokenAddress === token.tokenAddress) {
+			return token.providerUrl;
+		}
+	});
+};
 
 module.exports = { acceptToken, getAcceptedPaymentDetails, getDefaultProviderUrl };
