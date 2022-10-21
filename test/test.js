@@ -1,6 +1,6 @@
 const ethers = require("ethers");
 const axios = require("axios");
-const { use, expect } = require("chai");
+const { expect } = require("chai");
 const { getQuote } = require("./test.helpers.js");
 
 describe("DBS Arweave Upload", function () {
