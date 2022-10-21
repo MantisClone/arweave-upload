@@ -22,8 +22,8 @@ describe("DBS Arweave Upload", function () {
 
     describe("upload", function () {
 
-        it("should pull funds from user account.", async function () {
-            this.timeout = 15000;
+        it("should pull funds from user account.", async function(done) {
+            this.timeout(20000);
             const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
                 type: "arweave",
                 userAddress: wallet.address,
