@@ -261,6 +261,13 @@ exports.upload = async (req, res) => {
 		const allowance = await paymentTokenContract.allowance(userAddress, wallet.address);
 		console.log(allowance.toString());
 
+		if(allowance.lte(priceWei)) {
+			res.status(402).send({
+				message: `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${tokenAmount}, allowance: ${allowance}`
+			});
+			return;
+		}
+
 		try {
 			const tx = await paymentTokenContract.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
 			console.log(`tx = ${tx}`);
