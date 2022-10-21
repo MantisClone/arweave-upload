@@ -236,7 +236,8 @@ exports.upload = async (req, res) => {
 		if(jsonRpcUri === "default") {
 			console.log("default string detected.");
 			const defaultProviderUrl = getDefaultProviderUrl(quote.chainId, quote.tokenAddress);
-			provider = ethers.getDefaultProvider(defaultProviderUrl);
+			console.log(`default provider url (from tokens) = ${defaultProviderUrl}`);
+			provider = ethers.getDefaultProvider(defaultProviderUrl[0]);
 		}
 		else {
 			provider = ethers.getDefaultProvider(jsonRpcUri);
