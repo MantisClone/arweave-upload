@@ -4,7 +4,7 @@ const { expect } = require("chai");
 const { getQuote } = require("./test.helpers.js");
 
 describe("DBS Arweave Upload", function () {
-    const provider = ethers.getDefaultProvider(80001);
+    const provider = ethers.getDefaultProvider("maticmum");
     const wallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, provider);
     console.log("Wallet address: " + wallet.address);
 
