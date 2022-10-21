@@ -272,6 +272,9 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		// TODO: Set status
+
+		// Pull payment from userAddress
 		const confirms = tokenDetails.confirms || 1;
 		try {
 			await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
