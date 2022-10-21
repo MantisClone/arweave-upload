@@ -17,6 +17,17 @@ describe("DBS Arweave Upload", function () {
     });
 
     describe("Integration tests", function () {
+        const abi = [
+            'function approve(address, uint256) external returns (bool)',
+        ];
+        const paymentTokenContract = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
+
+        afterEach(async function () {
+            const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+            // Revoke approval after each test
+            await paymentTokenContract.approve(serverWallet.address, ethers.BigNumber.from(0)).wait(15);
+        });
+
         it("should fail to pull funds from user account without approval", async function() {
             this.timeout(20000);
 
@@ -54,10 +65,6 @@ describe("DBS Arweave Upload", function () {
             const quoteResponse = await getQuote(wallet);
             const quote = quoteResponse.data;
 
-            const abi = [
-                'function approve(address, uint256) external returns (bool)',
-            ];
-            const paymentTokenContract = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
 			await paymentTokenContract.approve(quote.approveAddress, ethers.constants.MaxInt256).wait(15);
 
             const nonce = Math.floor(new Date().getTime()) / 1000;
@@ -83,8 +90,6 @@ describe("DBS Arweave Upload", function () {
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
             expect(status).to.be.equal(6);
-
-			await paymentTokenContract.approve(quote.approveAddress, ethers.BigNumber.from(0)).wait(15);
         });
     });
 
