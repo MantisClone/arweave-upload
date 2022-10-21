@@ -6,6 +6,7 @@ const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
+const { QUOTE_STATUS_PAYMENT_FAILED } = require("../models/quote.model.js");
 
 exports.upload = async (req, res) => {
 	// Validate request
@@ -276,7 +277,7 @@ exports.upload = async (req, res) => {
 			await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 		}
 		catch(err) {
-			console.log(`${err}`);
+			console.log(err);
 			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
 			return;
 		}
@@ -284,6 +285,15 @@ exports.upload = async (req, res) => {
 		// TODO: Set status
 
 		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
+		try {
+			await (await token.withdraw(priceWei)).wait(confirms);
+		}
+		catch(err) {
+			console.log(err);
+			Quote.setStatus(quoteId, QUOTE_STATUS_PAYMENT_FAILED);
+			return;
+		}
+
 		// TODO: Set status
 
 		// Fund our EOA's Bundlr Account
