@@ -256,12 +256,12 @@ exports.upload = async (req, res) => {
 			'function allowance(address owner, address spender) external view returns (uint256)'
 		];
 		const erc20Address = "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889";
-		const paymentTokenContract = new ethers.Contract(erc20Address, abi, wallet);
+		const token = new ethers.Contract(erc20Address, abi, wallet);
 
-		console.log(`paymentTokenContract.address = ${paymentTokenContract.address}`);
+		console.log(`paymentTokenContract.address = ${token.address}`);
 
 		// Check allowance
-		const allowance = await paymentTokenContract.allowance(userAddress, wallet.address);
+		const allowance = await token.allowance(userAddress, wallet.address);
 		console.log(allowance.toString());
 
 		if(allowance.lte(priceWei)) {
@@ -271,7 +271,7 @@ exports.upload = async (req, res) => {
 
 		const confirms = tokenDetails.confirms || 1;
 		try {
-			await (await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
+			await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 		}
 		catch(err) {
 			console.log(`${err}`);
