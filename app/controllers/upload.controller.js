@@ -4,7 +4,7 @@ const axios = require('axios');
 const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
-const ethers = require('ethers');
+const { ethers, Provider } = require('ethers');
 const { acceptToken, getDefaultProviderUrl } = require("./tokens.js");
 
 exports.upload = async (req, res) => {
