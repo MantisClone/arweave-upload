@@ -5,10 +5,10 @@ const { getQuote } = require("./test.helpers.js");
 
 describe("DBS Arweave Upload", function () {
     const wallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY);
-    console.log("Alice address: " + wallet.address);
+    console.log("Wallet address: " + wallet.address);
     describe("getQuote", function () {
         it("should respond", async function () {
-            const response = await getQuote();
+            const response = await getQuote(wallet);
             expect(response).to.exist();
             expect(response.status).to.be.equal(200);
         });
@@ -16,7 +16,7 @@ describe("DBS Arweave Upload", function () {
     describe("upload", function () {
         it("should fail to pull funds from user account.", async function(done) {
             this.timeout(20000);
-            const quoteResponse = await getQuote();
+            const quoteResponse = await getQuote(wallet);
             const quote = quoteResponse.data;
 
             nonce = Math.floor(new Date().getTime()) / 1000;

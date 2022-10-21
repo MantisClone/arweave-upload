@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-exports.getQuote = async () => {
+exports.getQuote = async (wallet) => {
     return await axios.post(`http://localhost:8081/getQuote`, {
         type: "arweave",
         userAddress: wallet.address,
