@@ -14,7 +14,7 @@ describe("DBS Arweave Upload", function () {
         });
     });
     describe("upload", function () {
-        it("should fail to pull funds from user account.", async function() {
+        it("should fail to pull funds from user account without approval", async function() {
             this.timeout(20000);
             const quoteResponse = await getQuote(wallet);
             const quote = quoteResponse.data;
