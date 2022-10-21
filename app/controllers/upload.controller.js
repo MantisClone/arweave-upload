@@ -250,7 +250,7 @@ exports.upload = async (req, res) => {
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 		const abi = [
 			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
-			'function allowance(address owner, address spender) external returns (uint256)'
+			'function allowance(address owner, address spender) external view returns (uint256)'
 		];
 		const erc20Address = "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889";
 		const paymentTokenContract = new ethers.Contract(erc20Address, abi, wallet);
