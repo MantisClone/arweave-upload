@@ -275,7 +275,7 @@ exports.upload = async (req, res) => {
 		// TODO: Set status
 
 		// Pull payment from userAddress
-		const confirms = tokenDetails.confirms || 1;
+		const confirms = tokenDetails.confirms;
 		try {
 			await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 		}
@@ -287,14 +287,16 @@ exports.upload = async (req, res) => {
 
 		// TODO: Set status
 
-		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
-		try {
-			await (await token.withdraw(priceWei)).wait(confirms);
-		}
-		catch(err) {
-			console.log(err);
-			Quote.setStatus(quoteId, QUOTE_STATUS_PAYMENT_FAILED);
-			return;
+		// If payment is wrapped, unwrap it (ex. WETH -> ETH)
+		if(tokenDetails.wrappedAddress !== null) {
+			try {
+				await (await token.withdraw(priceWei)).wait(confirms);
+			}
+			catch(err) {
+				console.log(err);
+				Quote.setStatus(quoteId, QUOTE_STATUS_PAYMENT_FAILED);
+				return;
+			}
 		}
 
 		// TODO: Set status
