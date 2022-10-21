@@ -19,9 +19,9 @@ describe("DBS Arweave Upload", function () {
             const quoteResponse = await getQuote(wallet);
             const quote = quoteResponse.data;
 
-            nonce = Math.floor(new Date().getTime()) / 1000;
-            message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
-            signature = await wallet.signMessage(message);
+            const nonce = Math.floor(new Date().getTime()) / 1000;
+            const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+            const signature = await wallet.signMessage(message);
 
             const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
                 quoteId: quote.quoteId,
