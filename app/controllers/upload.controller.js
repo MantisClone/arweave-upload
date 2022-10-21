@@ -279,7 +279,10 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		// TODO: Set status
+
 		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
+		// TODO: Set status
 
 		// Fund our EOA's Bundlr Account
 		// TODO: Check the balance first
@@ -377,7 +380,11 @@ exports.upload = async (req, res) => {
 							// TODO: also hash the file
 						}
 						catch(error) {
-							console.error(error.message);
+							console.log(error.message);
+							console.log("unique message");
+							// TODO: Revisit this status code and consider changing to something unique
+							// TODO: Add separate status for insufficient funds, upload fail, etc.
+							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
 						}
 					})
 					.catch(error => {
