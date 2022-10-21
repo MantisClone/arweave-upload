@@ -10,7 +10,7 @@ describe("DBS Arweave Upload", function () {
         it("should respond", async function () {
             const response = await getQuote(wallet);
             expect(response).to.exist();
-            expect(response.status).to.be.equal(200);
+            expect(response.status).to.equal(200);
         });
     });
     describe("upload", function () {
@@ -31,7 +31,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             expect(uploadResponse).to.exist()
-            expect(uploadResponse.status).to.be.equal(200);
+            expect(uploadResponse.status).to.equal(200);
 
             // getStatus
             let status
