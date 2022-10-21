@@ -53,6 +53,7 @@ describe("DBS Arweave Upload", function () {
         })
 
         describe("with approval", function () {
+            this.timeout(60000);
 
             const abi = [
                 'function approve(address, uint256) external returns (bool)',
