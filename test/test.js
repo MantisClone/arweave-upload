@@ -6,6 +6,7 @@ const { getQuote } = require("./test.helpers.js");
 describe("DBS Arweave Upload", function () {
     const wallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY);
     console.log("Wallet address: " + wallet.address);
+
     describe("getQuote", function () {
         it("should respond", async function () {
             const response = await getQuote(wallet);
@@ -13,7 +14,8 @@ describe("DBS Arweave Upload", function () {
             expect(response.status).to.equal(200);
         });
     });
-    describe("upload", function () {
+
+    describe("Integration tests", function () {
         it("should fail to pull funds from user account without approval", async function() {
             this.timeout(20000);
 
