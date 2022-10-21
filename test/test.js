@@ -60,7 +60,7 @@ describe("DBS Arweave Upload", function () {
             const paymentTokenContract = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
 			const tx = await paymentTokenContract.approve(quote.approveAddress, ethers.constants.MaxInt256);
 			const txReceipt = await tx.wait();
-            console.log(`txReceipt = ${txReceipt}`);
+            console.log(txReceipt);
 
             const nonce = Math.floor(new Date().getTime()) / 1000;
             const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
