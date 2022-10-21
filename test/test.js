@@ -97,7 +97,7 @@ describe("DBS Arweave Upload", function () {
                     if(status >= 5) break;
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
-                expect(status).to.be.equal(6);
+                expect(status).to.be.equal(5);
             });
         });
     });
