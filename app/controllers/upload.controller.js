@@ -235,22 +235,22 @@ exports.upload = async (req, res) => {
 		let provider;
 		if(jsonRpcUri === "default") {
 			const defaultProviderUrl = getDefaultProviderUrl(quote.chainId, quote.tokenAddress);
-			console.log(`Using default providerUrl = ${defaultProviderUrl}`);
 			provider = ethers.getDefaultProvider(defaultProviderUrl)
 		}
 		else {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
 		}
-
-		console.log(`provider = ${provider.toString()}`);
+		console.log(`Provider.isProvider(provider) = ${Provider.isProvider(provider)}`)
+		console.log(`provider.getNetwork() = ${provider.getNetwork()}`);
+		console.log(`provider.ready = ${provider.ready}`)
 
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 		const abi = [
 			'function transferFrom(address, address, uint256) external returns (bool)',
 		];
-		const wrapper = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
+		const paymentTokenContract = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
 
-		console.log(`wrapper = ${wrapper}`);
+		console.log(`paymentTokenContract.address = ${paymentTokenContract.address}`);
 
 		try {
 			const tx = await wrapper.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
