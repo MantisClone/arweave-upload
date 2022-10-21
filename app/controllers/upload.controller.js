@@ -4,7 +4,7 @@ const axios = require('axios');
 const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
-const { ethers, Provider } = require('ethers');
+const ethers = require('ethers');
 const { acceptToken, getDefaultProviderUrl } = require("./tokens.js");
 
 exports.upload = async (req, res) => {
@@ -240,7 +240,6 @@ exports.upload = async (req, res) => {
 		else {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
 		}
-		console.log(`Provider.isProvider(provider) = ${Provider.isProvider(provider)}`)
 		console.log(`provider.getNetwork() = ${provider.getNetwork()}`);
 		console.log(`provider.ready = ${provider.ready}`)
 
