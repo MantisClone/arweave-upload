@@ -7,6 +7,36 @@ const checkConfig = () => {
 		console.log("ACCEPTED_PAYMENTS environment variable not set");
 		return false;
 	}
+	const payments = acceptedPayments.split(",");
+
+	const jsonRpcUris = process.env.JSON_RPC_URIS;
+	if(jsonRpcUris == null) {
+		console.log("JSON_RPC_URIS environment variable not set");
+		return false;
+	}
+	const uris = jsonRpcUris.split(",");
+	if(uris.length != payments.length) {
+		console.log("ACCEPTED_PAYMENTS and JSON_RPC_URIS environment variables do not have the same number of entries");
+		console.log(uris);
+		console.log(payments);
+		return false;
+	}
+	for(let i = 0; i < uris.length; i++) {
+		let url;
+		if(uris[i] != "default") {
+			try {
+				url = new URL(uris[i]);
+				if(url.protocol != "http:" && url.protocol != "https:") { // do we allow wss://?
+					console.log("each JSON_RPC_URIS should be http or https");
+					return false;
+				}
+			}
+			catch(err) {
+				console.log("One of the JSON_RPC_URIS is invalid");
+				return false;
+			}
+		}
+	}
 
 	const bundlrUri = process.env.BUNDLR_URI;
 	if(bundlrUri == null) {
