@@ -264,9 +264,7 @@ exports.upload = async (req, res) => {
 		console.log(allowance.toString());
 
 		if(allowance.lte(priceWei)) {
-			res.status(402).send({
-				message: `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}, allowance: ${allowance}`
-			});
+			console.log(`Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}, allowance: ${allowance}`);
 			return;
 		}
 
@@ -280,9 +278,13 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
-		console.log(`txReceipt = ${JSON.stringify(txReceipt)}`);
+		console.log(txReceipt);
+
+
 
 		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
+
+		return;
 
 		// Fund our EOA's Bundlr Account
 		// TODO: Check the balance first
