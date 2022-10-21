@@ -271,16 +271,13 @@ exports.upload = async (req, res) => {
 		const confirms = tokenDetails.confirms || 1;
 		try {
 			const txReceipt = await (await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
+			console.log(txReceipt);
 		}
 		catch(err) {
 			console.log(`${err}`);
 			await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
 			return;
 		}
-
-		console.log(txReceipt);
-
-
 
 		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
 
