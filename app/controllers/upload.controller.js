@@ -240,8 +240,8 @@ exports.upload = async (req, res) => {
 		else {
 			provider = ethers.getDefaultProvider(jsonRpcUri)
 		}
-		console.log(`provider.getNetwork() = ${provider.getNetwork()}`);
-		console.log(`provider.ready = ${provider.ready}`)
+
+		console.log(`network = ${await provider.ready}`);
 
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 		const abi = [
