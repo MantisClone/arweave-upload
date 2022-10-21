@@ -1,3 +1,4 @@
 {
-    "fullTrace": true
+    "fullTrace": true,
+    "timeout": 60000
 }
