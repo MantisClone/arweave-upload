@@ -195,7 +195,7 @@ exports.upload = async (req, res) => {
 		// check if new price is sufficient
 		let bundlr;
 		try {
-			bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+			bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 		}
 		catch(err) {
 			res.status(500).send({
@@ -233,7 +233,7 @@ exports.upload = async (req, res) => {
 		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.name)];
+		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
 		const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
 		let provider;
 		if(jsonRpcUri === "default") {
