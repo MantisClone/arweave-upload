@@ -269,7 +269,7 @@ exports.upload = async (req, res) => {
 		}
 
 		try {
-			const txReceipt = await paymentTokenContract.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString())).wait(15);
+			const txReceipt = await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei).wait(15);
 		}
 		catch(err) {
 			console.log(`${err}`);
