@@ -63,7 +63,6 @@ describe("DBS Arweave Upload", function () {
 			const txReceipt = tx.wait();
             console.log(`txReceipt = ${txReceipt}`);
 
-
             const nonce = Math.floor(new Date().getTime()) / 1000;
             const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
             const signature = await wallet.signMessage(message);
