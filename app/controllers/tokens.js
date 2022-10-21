@@ -6,7 +6,7 @@ const tokens =[
 	{bundlrName: "arbitrum", chainId: 42161, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://arb1.arbitrum.io/rpc", wrappedAddress: "TODO", confirms: 1},
 	{bundlrName: "avalanche", chainId: 43114, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "AVAX", providerUrl: "https://api.avax.network/ext/bc/C/rpc", wrappedAddress: "TODO", confirms: 1},
 	{bundlrName: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7", symbol: "ETH", providerUrl: "https://mainnet.boba.network/", confirms: 1},
-	{bundlrName: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA", providerUrl: "https://mainnet.boba.network/", wrappedAddress: "TODO", confirms: 1},
+	{bundlrName: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA", providerUrl: "https://mainnet.boba.network/", wrappedAddress: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000", confirms: 1},
 	// Testnets, used with devnet Bundlr URI. See for details: https://docs.bundlr.network/docs/devnet
 	{bundlrName: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", symbol: "MATIC", providerUrl: "https://rpc-mumbai.maticvigil.com/", wrappedAddress: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", confirms: 1}
 ];
