@@ -258,8 +258,8 @@ exports.upload = async (req, res) => {
 		console.log(`paymentTokenContract.address = ${paymentTokenContract.address}`);
 
 		// Check allowance
-		const allowance = await paymentTokenContract.allowance(userAddress, erc20Address);
-		console.log(allowance);
+		const allowance = await paymentTokenContract.allowance(userAddress, wallet.address);
+		console.log(allowance.toString());
 
 		try {
 			const tx = await paymentTokenContract.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
