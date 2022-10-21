@@ -59,7 +59,7 @@ describe("DBS Arweave Upload", function () {
             ];
             const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
 
-            afterEach(async function () {
+            afterEach("revoke approval", async function () {
                 const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
                 // Revoke approval
                 await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait(15);
