@@ -13,10 +13,8 @@ describe("DBS Arweave Upload", function () {
             expect(response.status).to.be.equal(200);
         });
     });
-
     describe("upload", function () {
-
-        it("should pull funds from user account.", async function(done) {
+        it("should fail to pull funds from user account.", async function(done) {
             this.timeout(20000);
             const quoteResponse = await getQuote();
             const quote = quoteResponse.data;
