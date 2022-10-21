@@ -252,7 +252,7 @@ exports.upload = async (req, res) => {
 		console.log(`paymentTokenContract.address = ${paymentTokenContract.address}`);
 
 		try {
-			const tx = await wrapper.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
+			const tx = await paymentTokenContract.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
 			console.log(`tx = ${tx}`);
 			const txReceipt = tx.wait()
 		}
