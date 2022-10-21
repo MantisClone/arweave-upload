@@ -30,6 +30,7 @@ describe("DBS Arweave Upload", function () {
                 signature: signature,
             });
 
+            expect(uploadResponse).to.exist()
             expect(uploadResponse.status).to.be.equal(200);
 
             // getStatus
