@@ -42,7 +42,7 @@ require("./app/routes/upload.routes.js")(app);
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, "localhost", () => {
 	console.log(`API Server is running at http://localhost:${PORT}/`);
-	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 	console.log(`Server wallet address = ${wallet.address}`);
 	if(process.env.DBS_URI !== "DEBUG") {
 		register();
