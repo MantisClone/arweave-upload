@@ -20,6 +20,7 @@ Quote.QUOTE_STATUS_PAYMENT_START = 2;
 Quote.QUOTE_STATUS_PAYMENT_END = 3;
 Quote.QUOTE_STATUS_UPLOAD_START = 4;
 Quote.QUOTE_STATUS_UPLOAD_END = 5;
+Quote.QUOTE_STATUS_PAYMENT_FAILED = 6;
 
 Quote.create = (newQuote, result) => {
 	const params = [

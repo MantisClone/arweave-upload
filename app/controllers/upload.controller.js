@@ -5,7 +5,7 @@ const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
-const { acceptToken } = require("./tokens.js");
+const { acceptToken, getDefaultProviderUrl } = require("./tokens.js");
 
 exports.upload = async (req, res) => {
 	// Validate request
@@ -201,7 +201,7 @@ exports.upload = async (req, res) => {
 				message: err.message
 			});
 			return;
-		}	
+		}
 
 		let priceWei;
 		try {
@@ -228,8 +228,49 @@ exports.upload = async (req, res) => {
 		// change status
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 
-		// TODO: Pull WETH from user's account into our EOA using transferFrom(userAddress, amount)
-		// TODO: Unwrap WETH to ETH
+		// Pull payment from user's account using transferFrom(userAddress, amount)
+		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
+		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.name)];
+		let provider;
+		if(jsonRpcUri === "default") {
+			console.log("default string detected.");
+			const defaultProviderUrl = getDefaultProviderUrl(parseInt(quote.chainId), quote.tokenAddress);
+			console.log(`default provider url (from tokens) = ${defaultProviderUrl}`);
+			provider = ethers.getDefaultProvider(defaultProviderUrl);
+		}
+		else {
+			provider = ethers.getDefaultProvider(jsonRpcUri);
+			console.log("default string NOT detected.");
+			console.log(`jsonRpcUri = ${jsonRpcUri}`);
+		}
+
+		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
+
+		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+		const abi = [
+			'function transferFrom(address, address, uint256) external returns (bool)',
+		];
+		const paymentTokenContract = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
+
+		console.log(`paymentTokenContract.address = ${paymentTokenContract.address}`);
+
+		try {
+			const tx = await paymentTokenContract.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
+			console.log(`tx = ${tx}`);
+			const txReceipt = tx.wait()
+		}
+		catch(err) {
+			console.log(`${err}`);
+			await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+			return;
+		}
+
+
+
+		console.log(`txReceipt = ${JSON.stringify(txReceipt)}`);
+
+		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
 
 		// Fund our EOA's Bundlr Account
 		// TODO: Check the balance first
@@ -273,7 +314,7 @@ exports.upload = async (req, res) => {
 						// download started
 						const contentType = response.headers['content-type'];
 						const httpLength = parseInt(response.headers['content-length']);
-						
+
 						if(httpLength) {
 							if(httpLength != quotedFile.length) {
 								// quoted size is different than real size
