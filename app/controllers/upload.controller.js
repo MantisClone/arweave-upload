@@ -231,16 +231,17 @@ exports.upload = async (req, res) => {
 		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)]
+		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)];
 		let provider;
 		if(jsonRpcUri === "default") {
-			console.log("default string detected.")
+			console.log("default string detected.");
 			const defaultProviderUrl = getDefaultProviderUrl(quote.chainId, quote.tokenAddress);
-			provider = ethers.getDefaultProvider(defaultProviderUrl)
+			provider = ethers.getDefaultProvider(defaultProviderUrl);
 		}
 		else {
-			provider = ethers.getDefaultProvider(jsonRpcUri)
-			console.log("default string NOT detected.")
+			provider = ethers.getDefaultProvider(jsonRpcUri);
+			console.log("default string NOT detected.");
+			console.log(`jsonRpcUri = ${jsonRpcUri}`);
 		}
 
 		console.log(`network = ${JSON.stringify(await provider.ready)}`);
