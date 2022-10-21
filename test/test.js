@@ -62,7 +62,6 @@ describe("DBS Arweave Upload", function () {
 
             afterEach("revoke approval", async function () {
                 const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-                // Revoke approval
                 await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
             });
 
@@ -70,7 +69,6 @@ describe("DBS Arweave Upload", function () {
                 const quoteResponse = await getQuote(wallet);
                 const quote = quoteResponse.data;
 
-                // Grant infinite approval
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
