@@ -266,8 +266,6 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
-
-
 		console.log(`txReceipt = ${JSON.stringify(txReceipt)}`);
 
 		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)

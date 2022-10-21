@@ -56,9 +56,6 @@ getAcceptedPaymentDetails = () => {
 
 getDefaultProviderUrl = (chainId, tokenAddress) => {
 	return tokens.filter((token) => {
-		console.log(chainId);
-		console.log(tokenAddress);
-		console.log(token);
 		if(chainId === token.chainId && tokenAddress === token.tokenAddress) {
 			return token;
 		}
