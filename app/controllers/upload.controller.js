@@ -280,8 +280,6 @@ exports.upload = async (req, res) => {
 
 		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
 
-		return;
-
 		// Fund our EOA's Bundlr Account
 		// TODO: Check the balance first
 		try {
