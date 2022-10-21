@@ -270,8 +270,7 @@ exports.upload = async (req, res) => {
 
 		const confirms = tokenDetails.confirms || 1;
 		try {
-			const txReceipt = await (await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
-			console.log(txReceipt);
+			await (await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 		}
 		catch(err) {
 			console.log(`${err}`);
