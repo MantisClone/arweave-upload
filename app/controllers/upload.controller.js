@@ -218,7 +218,7 @@ exports.upload = async (req, res) => {
 
 		if(priceWei.gte(quoteTokenAmount)) {
 			res.status(402).send({
-				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${tokenAmount}`
+				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}`
 			});
 			return;
 		}
@@ -263,7 +263,7 @@ exports.upload = async (req, res) => {
 
 		if(allowance.lte(priceWei)) {
 			res.status(402).send({
-				message: `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${tokenAmount}, allowance: ${allowance}`
+				message: `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}, allowance: ${allowance}`
 			});
 			return;
 		}
