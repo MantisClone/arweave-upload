@@ -22,7 +22,7 @@ Quote.QUOTE_STATUS_UPLOAD_START = 4;
 Quote.QUOTE_STATUS_UPLOAD_END = 5;
 Quote.QUOTE_STATUS_PAYMENT_FAILED = 6;
 
-Quote.create = (newQuote, result) => {
+Quote.create = async (newQuote, result) => {
 	const params = [
 		newQuote.quoteId,
 		newQuote.status,
@@ -69,7 +69,7 @@ Quote.create = (newQuote, result) => {
 	});
 };
 
-Quote.get = (quoteId, result) => {
+Quote.get = async (quoteId, result) => {
 	const quote_sql = `
 		SELECT *, (SELECT SUM(length) FROM files WHERE quoteId = ?) AS 'size'
 		FROM quote
@@ -92,7 +92,7 @@ Quote.get = (quoteId, result) => {
 	});
 }
 
-Quote.getStatus = (quoteId, result) => {
+Quote.getStatus = async (quoteId, result) => {
 	const status_sql = "SELECT status FROM quote WHERE quoteId = ?;";
 
 	sql.get(status_sql, [quoteId], (err, res) => {
@@ -111,7 +111,7 @@ Quote.getStatus = (quoteId, result) => {
 	});
 }
 
-Quote.setStatus = (quoteId, status) => {
+Quote.setStatus = async (quoteId, status) => {
 	const quote_sql = 'UPDATE quote SET status = ? WHERE quoteId = ?;'
 	sql.run(quote_sql, [status, quoteId], (err, res) => {
 		if(err) {
@@ -121,7 +121,7 @@ Quote.setStatus = (quoteId, status) => {
 	});
 };
 
-Quote.getLink = (quoteId, result) => {
+Quote.getLink = async (quoteId, result) => {
 	// check status
 	Quote.getStatus(quoteId, (err, data) => {
 		if(err) {
