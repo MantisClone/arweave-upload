@@ -60,9 +60,9 @@ getDefaultProviderUrl = (chainId, tokenAddress) => {
 		console.log(tokenAddress);
 		console.log(token);
 		if(chainId === token.chainId && tokenAddress === token.tokenAddress) {
-			return token.providerUrl;
+			return token;
 		}
-	});
+	})[0].providerUrl;
 };
 
 module.exports = { acceptToken, getAcceptedPaymentDetails, getDefaultProviderUrl };
