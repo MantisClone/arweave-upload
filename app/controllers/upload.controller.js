@@ -231,7 +231,7 @@ exports.upload = async (req, res) => {
 		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken)];
+		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.name)];
 		let provider;
 		if(jsonRpcUri === "default") {
 			console.log("default string detected.");
