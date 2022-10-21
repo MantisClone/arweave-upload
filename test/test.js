@@ -9,7 +9,7 @@ describe("DBS Arweave Upload", function () {
     describe("getQuote", function () {
         it("should respond", async function () {
             const response = await getQuote(wallet);
-            expect(response).to.exist();
+            expect(response).to.exist;
             expect(response.status).to.equal(200);
         });
     });
