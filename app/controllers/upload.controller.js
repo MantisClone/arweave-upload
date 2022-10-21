@@ -205,7 +205,8 @@ exports.upload = async (req, res) => {
 
 		let priceWei;
 		try {
-			priceWei = ethers.BigNumber.from((await bundlr.getPrice(quote.size)).toString());
+			bundlrPriceWei = await bundlr.getPrice(quote.size)
+			priceWei = ethers.BigNumber.from(bundlrPriceWei.toString());
 		}
 		catch(err) {
 			res.status(500).send({
@@ -283,7 +284,7 @@ exports.upload = async (req, res) => {
 		// Fund our EOA's Bundlr Account
 		// TODO: Check the balance first
 		try {
-			let response = await bundlr.fund(new bundlr.BigNumber(priceWei.toString()));
+			let response = await bundlr.fund(bundlrPriceWei);
 			// TODO: should we record the response values?
 			/* {
 				id: '0x15d26881006589bd3ac5366ebd5031d8c14a2755d962337fad7216744fe92ed5',
