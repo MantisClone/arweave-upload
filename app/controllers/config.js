@@ -14,10 +14,10 @@ const checkConfig = () => {
 		console.log("Try https://node1.bundlr.network or https://devnet.bundlr.network");
 		return false;
 	}
-	try {		
+	try {
 		const bundlrUrl = new URL(bundlrUri);
 		if(bundlrUrl.protocol != "http:" && bundlrUrl.protocol != "https:") {
-			console.log("BUNDLR_URI is should be http or https");
+			console.log("BUNDLR_URI should be http or https");
 			return false;
 		}
 	}
@@ -61,10 +61,10 @@ const checkConfig = () => {
 		return false;
 	}
 	if(dbsUri != "DEBUG") {
-		try {		
+		try {
 			const dbsUrl = new URL(dbsUri);
 			if(dbsUrl.protocol != "http:" && dbsUrl.protocol != "https:") {
-				console.log("DBS_URI is should be http or https");
+				console.log("DBS_URI should be http or https");
 				return false;
 			}
 		}
@@ -79,10 +79,10 @@ const checkConfig = () => {
 		console.log("SELF_URI environment variable not set");
 		return false;
 	}
-	try {		
+	try {
 		const selfUrl = new URL(selfUri);
 		if(selfUrl.protocol != "http:" && selfUrl.protocol != "https:") {
-			console.log("SELF_URI is should be http or https");
+			console.log("SELF_URI should be http or https");
 			return false;
 		}
 	}
