@@ -5,7 +5,7 @@ const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
-const { acceptToken, getDefaultProviderUrl } = require("./tokens.js");
+const { acceptToken } = require("./tokens.js");
 
 exports.upload = async (req, res) => {
 	// Validate request
@@ -232,10 +232,12 @@ exports.upload = async (req, res) => {
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.name)];
+		const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
 		let provider;
 		if(jsonRpcUri === "default") {
 			console.log("default string detected.");
-			const defaultProviderUrl = getDefaultProviderUrl(parseInt(quote.chainId), quote.tokenAddress);
+
+			const defaultProviderUrl = tokenDetails.providerUrl;
 			console.log(`default provider url (from tokens) = ${defaultProviderUrl}`);
 			provider = ethers.getDefaultProvider(defaultProviderUrl);
 		}
@@ -268,8 +270,9 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		const confirms = tokenDetails.confirms || 1;
 		try {
-			const txReceipt = await (await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei)).wait(15);
+			const txReceipt = await (await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 		}
 		catch(err) {
 			console.log(`${err}`);

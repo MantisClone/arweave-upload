@@ -60,20 +60,19 @@ describe("DBS Arweave Upload", function () {
             const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
 
             afterEach("revoke approval", async function () {
-                this.timeout(20000);
                 const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
                 // Revoke approval
-                await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait(15);
+                await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
             });
 
             it("should successfully pull funds from user account", async function() {
-                this.timeout(40000);
+                this.timeout(20000);
 
                 const quoteResponse = await getQuote(wallet);
                 const quote = quoteResponse.data;
 
                 // Grant infinite approval
-                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait(15);
+                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
