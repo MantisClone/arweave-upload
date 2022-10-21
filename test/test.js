@@ -35,6 +35,8 @@ describe("DBS Arweave Upload", function () {
             let status
             for(let i = 0; i < 15; i++) {
                 let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
+                expect(getStatusResponse).to.exist;
+                expect(getStatusResponse.status).to.equal(200);
                 status = getStatusResponse.data.status;
                 console.log(`status = ${status}`);
                 if(status === 5) break;
