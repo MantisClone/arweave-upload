@@ -45,7 +45,7 @@ describe("DBS Arweave Upload", function () {
                     expect(getStatusResponse.status).to.equal(200);
                     status = getStatusResponse.data.status;
                     console.log(`status = ${status}`);
-                    if(status === 5) break;
+                    if(status >= 5) break;
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
                 expect(status).to.be.equal(6);
