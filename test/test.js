@@ -1,22 +1,16 @@
 const ethers = require("ethers");
 const axios = require("axios");
 const { use, expect } = require("chai");
+const { getQuote } = require("./test.helpers.js");
 
 describe("DBS Arweave Upload", function () {
     const wallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY);
     console.log("Alice address: " + wallet.address);
     describe("getQuote", function () {
-        it("should return quote ID", async function () {
-            const response = await axios.post(`http://localhost:8081/getQuote`, {
-                type: "arweave",
-                userAddress: wallet.address,
-                files: [{length: 119762}, {length: 13}],
-                payment: {
-                    chainId: 80001,
-                    tokenAddress: "0x0000000000000000000000000000000000001010",
-                },
-            });
-            console.log(`quote = ${JSON.stringify(response.data)}`);
+        it("should respond", async function () {
+            const response = await getQuote();
+            expect(response).to.exist();
+            expect(response.status).to.be.equal(200);
         });
     });
 
@@ -24,15 +18,7 @@ describe("DBS Arweave Upload", function () {
 
         it("should pull funds from user account.", async function(done) {
             this.timeout(20000);
-            const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
-                type: "arweave",
-                userAddress: wallet.address,
-                files: [{length: 119762}, {length: 13}],
-                payment: {
-                    chainId: 80001,
-                    tokenAddress: "0x0000000000000000000000000000000000001010",
-                },
-            });
+            const quoteResponse = await getQuote();
             const quote = quoteResponse.data;
 
             nonce = Math.floor(new Date().getTime()) / 1000;
