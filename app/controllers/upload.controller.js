@@ -244,7 +244,7 @@ exports.upload = async (req, res) => {
 			console.log(`jsonRpcUri = ${jsonRpcUri}`);
 		}
 
-		console.log(`network = ${JSON.stringify(await provider.ready)}`);
+		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 		const abi = [
