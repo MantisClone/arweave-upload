@@ -86,7 +86,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.status).to.equal(200);
 
                 let status
-                for(let i = 0; i < 15; i++) {
+                for(let i = 0; i < 60; i++) {
                     let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
                     expect(getStatusResponse).to.exist;
                     expect(getStatusResponse.status).to.equal(200);
