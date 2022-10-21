@@ -5,7 +5,7 @@ const Upload = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
-const { acceptToken, getDefaultProviderUrl } = require("./tokens.js");
+const { acceptToken } = require("./tokens.js");
 
 exports.upload = async (req, res) => {
 	// Validate request
@@ -111,7 +111,7 @@ exports.upload = async (req, res) => {
 	}
 
 	// validate quote
-	Quote.get(quoteId, async (err, quote) => {
+	await Quote.get(quoteId, async (err, quote) => {
 		if(err) {
 			if(err.code == 404) {
 				res.status(404).send({
@@ -205,7 +205,8 @@ exports.upload = async (req, res) => {
 
 		let priceWei;
 		try {
-			priceWei = await bundlr.getPrice(quote.size);
+			bundlrPriceWei = await bundlr.getPrice(quote.size)
+			priceWei = ethers.BigNumber.from(bundlrPriceWei.toString());
 		}
 		catch(err) {
 			res.status(500).send({
@@ -218,7 +219,7 @@ exports.upload = async (req, res) => {
 
 		if(priceWei.gte(quoteTokenAmount)) {
 			res.status(402).send({
-				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${tokenAmount}`
+				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}`
 			});
 			return;
 		}
@@ -226,16 +227,18 @@ exports.upload = async (req, res) => {
 		res.send(null); // send 200
 
 		// change status
-		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
+		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 
 		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.name)];
+		const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
 		let provider;
 		if(jsonRpcUri === "default") {
 			console.log("default string detected.");
-			const defaultProviderUrl = getDefaultProviderUrl(parseInt(quote.chainId), quote.tokenAddress);
+
+			const defaultProviderUrl = tokenDetails.providerUrl;
 			console.log(`default provider url (from tokens) = ${defaultProviderUrl}`);
 			provider = ethers.getDefaultProvider(defaultProviderUrl);
 		}
@@ -249,33 +252,42 @@ exports.upload = async (req, res) => {
 
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 		const abi = [
-			'function transferFrom(address, address, uint256) external returns (bool)',
+			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
+			'function allowance(address owner, address spender) external view returns (uint256)'
 		];
-		const paymentTokenContract = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, wallet);
+		const erc20Address = "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889";
+		const paymentTokenContract = new ethers.Contract(erc20Address, abi, wallet);
 
 		console.log(`paymentTokenContract.address = ${paymentTokenContract.address}`);
 
-		try {
-			const tx = await paymentTokenContract.transferFrom(userAddress, wallet.address, ethers.BigNumber.from(priceWei.toString()));
-			console.log(`tx = ${tx}`);
-			const txReceipt = tx.wait()
-		}
-		catch(err) {
-			console.log(`${err}`);
-			await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+		// Check allowance
+		const allowance = await paymentTokenContract.allowance(userAddress, wallet.address);
+		console.log(allowance.toString());
+
+		if(allowance.lte(priceWei)) {
+			console.log(`Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}, allowance: ${allowance}`);
 			return;
 		}
 
+		const confirms = tokenDetails.confirms || 1;
+		try {
+			await (await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
+		}
+		catch(err) {
+			console.log(`${err}`);
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+			return;
+		}
 
-
-		console.log(`txReceipt = ${JSON.stringify(txReceipt)}`);
+		// TODO: Set status
 
 		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
+		// TODO: Set status
 
 		// Fund our EOA's Bundlr Account
 		// TODO: Check the balance first
 		try {
-			let response = await bundlr.fund(priceWei);
+			let response = await bundlr.fund(bundlrPriceWei);
 			// TODO: should we record the response values?
 			/* {
 				id: '0x15d26881006589bd3ac5366ebd5031d8c14a2755d962337fad7216744fe92ed5',
@@ -339,7 +351,7 @@ exports.upload = async (req, res) => {
 						uploader.on("chunkError", (e) => {
 							//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
 						});
-						uploader.on("done", (finishRes) => {
+						uploader.on("done", async (finishRes) => {
 							const transactionId = finishRes.data.id;
 							Upload.setHash(quoteId, index, transactionId);
 
@@ -349,7 +361,7 @@ exports.upload = async (req, res) => {
 
 								files_uploaded = files_uploaded + 1;
 								if(files_uploaded == files.length) {
-									Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+									await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
 								}
 
 							}
@@ -368,7 +380,11 @@ exports.upload = async (req, res) => {
 							// TODO: also hash the file
 						}
 						catch(error) {
-							console.error(error.message);
+							console.log(error.message);
+							console.log("unique message");
+							// TODO: Revisit this status code and consider changing to something unique
+							// TODO: Add separate status for insufficient funds, upload fail, etc.
+							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
 						}
 					})
 					.catch(error => {

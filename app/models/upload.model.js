@@ -9,7 +9,7 @@ const File = function(file) {
 	this.transactionHash = file.transactionHash;
 };
 
-File.get = (quoteId, index, result) => {
+File.get = async (quoteId, index, result) => {
 	const query = `
 		SELECT *
 		FROM files
@@ -27,7 +27,7 @@ File.get = (quoteId, index, result) => {
 	});
 }
 
-File.setHash = (quoteId, index, transactionHash) => {
+File.setHash = async (quoteId, index, transactionHash) => {
 	const query = `
 		UPDATE files SET transactionHash = ?
 		WHERE "quoteId" = ?
