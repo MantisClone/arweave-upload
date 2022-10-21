@@ -111,7 +111,7 @@ exports.upload = async (req, res) => {
 	}
 
 	// validate quote
-	Quote.get(quoteId, async (err, quote) => {
+	await Quote.get(quoteId, async (err, quote) => {
 		if(err) {
 			if(err.code == 404) {
 				res.status(404).send({
@@ -226,7 +226,7 @@ exports.upload = async (req, res) => {
 		res.send(null); // send 200
 
 		// change status
-		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
+		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 
 		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
@@ -274,7 +274,7 @@ exports.upload = async (req, res) => {
 		}
 		catch(err) {
 			console.log(`${err}`);
-			await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
 			return;
 		}
 
@@ -349,7 +349,7 @@ exports.upload = async (req, res) => {
 						uploader.on("chunkError", (e) => {
 							//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
 						});
-						uploader.on("done", (finishRes) => {
+						uploader.on("done", async (finishRes) => {
 							const transactionId = finishRes.data.id;
 							Upload.setHash(quoteId, index, transactionId);
 
@@ -359,7 +359,7 @@ exports.upload = async (req, res) => {
 
 								files_uploaded = files_uploaded + 1;
 								if(files_uploaded == files.length) {
-									Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+									await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
 								}
 
 							}

@@ -240,7 +240,7 @@ exports.create = async (req, res) => {
 	});
 
 	// Save Reading in the database
-	Quote.create(quote, (err, data) => {
+	await Quote.create(quote, (err, data) => {
 		if(err) {
 			res.status(500).send({
 				message:
@@ -270,7 +270,7 @@ exports.getStatus = async (req, res) => {
 		return;
 	}
 
-	Quote.getStatus(quoteId, (err, data) => {
+	await Quote.getStatus(quoteId, (err, data) => {
 		if(err) {
 			if(err.code == 404) {
 				res.status(404).send({
@@ -291,7 +291,7 @@ exports.getStatus = async (req, res) => {
 };
 
 exports.setStatus = async (quoteId, status) => {
-	Quote.setStatus(quoteId, status, (err, data) => {
+	await Quote.setStatus(quoteId, status, (err, data) => {
 		if(err) {
 			console.log(err);
 		}
@@ -343,7 +343,7 @@ exports.getLink = async (req, res) => {
 	}
 
 	// get userAddress
-	Quote.get(quoteId, (err, data) => {
+	await Quote.get(quoteId, (err, data) => {
 		if(err) {
 			if(err.code == 404) {
 				res.status(404).send({
@@ -396,7 +396,7 @@ exports.getLink = async (req, res) => {
 			}
 			Nonce.set(userAddress, nonce);
 
-			Quote.getLink(quoteId, (err, data) => {
+			await Quote.getLink(quoteId, (err, data) => {
 				if(err) {
 					if(err.code == 404) {
 						res.status(404).send({
