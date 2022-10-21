@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
+const ethers = require('ethers');
 const { getAcceptedPaymentDetails } = require("./app/controllers/tokens.js");
 const { checkConfig } = require("./app/controllers/config.js");
 
@@ -46,6 +47,8 @@ require("./app/routes/upload.routes.js")(app);
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, "localhost", () => {
 	console.log(`API Server is running at http://localhost:${PORT}/`);
+	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
+	console.log(`Server wallet address = ${wallet.address}`);
 	if(process.env.DBS_URI !== "DEBUG") {
 		register();
 		const registrationTimer = setInterval(register, process.env.REGISTRATION_INTERVAL || 30000)
