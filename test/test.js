@@ -24,8 +24,8 @@ describe("DBS Arweave Upload", function () {
 
         afterEach(async function () {
             const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-            // Revoke approval after each test
-            await paymentTokenContract.approve(serverWallet.address, ethers.BigNumber.from(0)).wait(15);
+            // Revoke approval
+            await (await paymentTokenContract.approve(serverWallet.address, ethers.BigNumber.from(0))).wait(15);
         });
 
         it("should fail to pull funds from user account without approval", async function() {
@@ -65,7 +65,8 @@ describe("DBS Arweave Upload", function () {
             const quoteResponse = await getQuote(wallet);
             const quote = quoteResponse.data;
 
-			await paymentTokenContract.approve(quote.approveAddress, ethers.constants.MaxInt256).wait(15);
+            // Grant infinite approval
+			await (await paymentTokenContract.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait(15);
 
             const nonce = Math.floor(new Date().getTime()) / 1000;
             const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
