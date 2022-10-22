@@ -257,7 +257,7 @@ exports.create = async (req, res) => {
 };
 
 exports.getStatus = async (req, res) => {
-	console.log(`getStatus endpoint called: ${JSON.stringify(req.body)}`)
+	console.log(`getStatus endpoint called: ${JSON.stringify(req.query)}`)
 
 	if(!req.query || !req.query.quoteId) {
 		res.status(400).send({
@@ -303,7 +303,7 @@ exports.setStatus = async (quoteId, status) => {
 };
 
 exports.getLink = async (req, res) => {
-	console.log(`getLink endpoint called: ${JSON.stringify(req.body)}`)
+	console.log(`getLink endpoint called: ${JSON.stringify(req.query)}`)
 
 	if(!req.query || !req.query.quoteId) {
 		res.status(400).send({
