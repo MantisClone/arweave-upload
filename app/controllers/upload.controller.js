@@ -9,6 +9,8 @@ const { acceptToken } = require("./tokens.js");
 const { QUOTE_STATUS_PAYMENT_FAILED } = require("../models/quote.model.js");
 
 exports.upload = async (req, res) => {
+	console.log(`upload endpoint called: ${JSON.stringify(req.body)}`)
+
 	// Validate request
 	if(!req.body) {
 		res.status(400).send({
