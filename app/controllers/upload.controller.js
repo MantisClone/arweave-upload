@@ -257,8 +257,8 @@ exports.upload = async (req, res) => {
 			'function balanceOf(address owner) external view returns (uint256)',
 			'function withdraw(uint256 value) external'
 		];
-		const erc20Address = "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889";
-		const token = new ethers.Contract(erc20Address, abi, wallet);
+		const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
+		const token = new ethers.Contract(tokenAddress, abi, wallet);
 
 		console.log(`payment token address = ${token.address}`);
 
