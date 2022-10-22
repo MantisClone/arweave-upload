@@ -260,7 +260,7 @@ exports.upload = async (req, res) => {
 		const erc20Address = "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889";
 		const token = new ethers.Contract(erc20Address, abi, wallet);
 
-		console.log(`paymentTokenContract.address = ${token.address}`);
+		console.log(`payment token address = ${token.address}`);
 
 		// Check allowance
 		const allowance = await token.allowance(userAddress, wallet.address);
