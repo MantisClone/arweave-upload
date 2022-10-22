@@ -264,7 +264,7 @@ exports.upload = async (req, res) => {
 
 		// Check allowance
 		const allowance = await token.allowance(userAddress, wallet.address);
-		console.log(allowance.toString());
+		console.log(`allowance = ${allowance}`);
 
 		if(allowance.lte(priceWei)) {
 			console.log(`Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}, allowance: ${allowance}`);
