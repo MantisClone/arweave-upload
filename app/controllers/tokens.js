@@ -1,3 +1,4 @@
+// TODO: Update `confirms` fields
 const tokens =[
 	// Mainnets, used with public Bundlr URIs. See for details https://docs.bundlr.network/docs/bundlers
 	{bundlrName: "ethereum", chainId: 1, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://cloudflare-eth.com/", wrappedAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", confirms: 1},
