@@ -227,6 +227,12 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
+		// 1. Pull wrapped token from userAddress
+		// 2. Unwrap
+		// If not enough for (1), throw error
+		// If enough for (1) but not enough for (2)...throw error? OR request extra funds from user to cover gas costs?
+
 		res.send(null); // send 200
 
 		// change status
