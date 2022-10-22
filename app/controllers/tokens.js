@@ -1,6 +1,6 @@
 const tokens =[
 	// Mainnets, used with public Bundlr URIs. See for details https://docs.bundlr.network/docs/bundlers
-	{bundlrName: "ethereum", chainId: 1, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://cloudflare-eth.com/", wrappedAddress: "TODO", confirms: 1},
+	{bundlrName: "ethereum", chainId: 1, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://cloudflare-eth.com/", wrappedAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", confirms: 1},
 	{bundlrName: "matic", chainId: 137, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "MATIC", providerUrl: "https://polygon-rpc.com", wrappedAddress: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", confirms: 30},
 	{bundlrName: "bnb", chainId: 56, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BNB", providerUrl: "https://bsc-dataseed.binance.org", wrappedAddress: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", confirms: 1},
 	{bundlrName: "arbitrum", chainId: 42161, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://arb1.arbitrum.io/rpc", wrappedAddress: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", confirms: 1},
