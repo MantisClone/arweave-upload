@@ -6,8 +6,11 @@ const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
+const { QUOTE_STATUS_PAYMENT_FAILED } = require("../models/quote.model.js");
 
 exports.upload = async (req, res) => {
+	console.log(`upload endpoint called: ${JSON.stringify(req.body)}`)
+
 	// Validate request
 	if(!req.body) {
 		res.status(400).send({
@@ -194,7 +197,7 @@ exports.upload = async (req, res) => {
 		// check if new price is sufficient
 		let bundlr;
 		try {
-			bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+			bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 		}
 		catch(err) {
 			res.status(500).send({
@@ -224,6 +227,12 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
+		// 1. Pull wrapped token from userAddress
+		// 2. Unwrap
+		// If not enough for (1), throw error
+		// If enough for (1) but not enough for (2)...throw error? OR request extra funds from user to cover gas costs?
+
 		res.send(null); // send 200
 
 		// change status
@@ -232,20 +241,17 @@ exports.upload = async (req, res) => {
 		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.name)];
+		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
 		const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
 		let provider;
 		if(jsonRpcUri === "default") {
-			console.log("default string detected.");
-
 			const defaultProviderUrl = tokenDetails.providerUrl;
-			console.log(`default provider url (from tokens) = ${defaultProviderUrl}`);
+			console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
 			provider = ethers.getDefaultProvider(defaultProviderUrl);
 		}
 		else {
+			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
 			provider = ethers.getDefaultProvider(jsonRpcUri);
-			console.log("default string NOT detected.");
-			console.log(`jsonRpcUri = ${jsonRpcUri}`);
 		}
 
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
@@ -253,35 +259,51 @@ exports.upload = async (req, res) => {
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 		const abi = [
 			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
-			'function allowance(address owner, address spender) external view returns (uint256)'
+			'function allowance(address owner, address spender) external view returns (uint256)',
+			'function balanceOf(address owner) external view returns (uint256)',
+			'function withdraw(uint256 value) external'
 		];
-		const erc20Address = "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889";
-		const paymentTokenContract = new ethers.Contract(erc20Address, abi, wallet);
+		const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
+		const token = new ethers.Contract(tokenAddress, abi, wallet);
 
-		console.log(`paymentTokenContract.address = ${paymentTokenContract.address}`);
+		console.log(`payment token address = ${token.address}`);
 
 		// Check allowance
-		const allowance = await paymentTokenContract.allowance(userAddress, wallet.address);
-		console.log(allowance.toString());
+		const allowance = await token.allowance(userAddress, wallet.address);
+		console.log(`allowance = ${allowance}`);
 
 		if(allowance.lte(priceWei)) {
 			console.log(`Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}, allowance: ${allowance}`);
 			return;
 		}
 
-		const confirms = tokenDetails.confirms || 1;
+		// TODO: Set status
+
+		// Pull payment from userAddress
+		const confirms = tokenDetails.confirms;
 		try {
-			await (await paymentTokenContract.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
+			await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 		}
 		catch(err) {
-			console.log(`${err}`);
+			console.log(err);
 			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
 			return;
 		}
 
 		// TODO: Set status
 
-		// TODO: If payment is wrapped, unwrap it (ex. WETH -> ETH)
+		// If payment is wrapped, unwrap it (ex. WETH -> ETH)
+		if(tokenDetails.wrappedAddress !== null) {
+			try {
+				await (await token.withdraw(priceWei)).wait(confirms);
+			}
+			catch(err) {
+				console.log(err);
+				Quote.setStatus(quoteId, QUOTE_STATUS_PAYMENT_FAILED);
+				return;
+			}
+		}
+
 		// TODO: Set status
 
 		// Fund our EOA's Bundlr Account

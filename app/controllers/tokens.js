@@ -1,14 +1,15 @@
+// TODO: Update `confirms` fields
 const tokens =[
 	// Mainnets, used with public Bundlr URIs. See for details https://docs.bundlr.network/docs/bundlers
-	{name: "ethereum", chainId: 1, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://cloudflare-eth.com/"},
-	{name: "matic", chainId: 137, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "MATIC", providerUrl: "https://polygon-rpc.com", confirms: 30},
-	{name: "bnb", chainId: 56, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BNB", providerUrl: "https://bsc-dataseed.binance.org"},
-	{name: "arbitrum", chainId: 42161, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://arb1.arbitrum.io/rpc"},
-	{name: "avalanche", chainId: 43114, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "AVAX", providerUrl: "https://api.avax.network/ext/bc/C/rpc"},
-	{name: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7", symbol: "ETH", providerUrl: "https://mainnet.boba.network/"},
-	{name: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA", providerUrl: "https://mainnet.boba.network/"},
+	{bundlrName: "ethereum", chainId: 1, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://cloudflare-eth.com/", wrappedAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", confirms: 1},
+	{bundlrName: "matic", chainId: 137, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "MATIC", providerUrl: "https://polygon-rpc.com", wrappedAddress: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", confirms: 30},
+	{bundlrName: "bnb", chainId: 56, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BNB", providerUrl: "https://bsc-dataseed.binance.org", wrappedAddress: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", confirms: 1},
+	{bundlrName: "arbitrum", chainId: 42161, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://arb1.arbitrum.io/rpc", wrappedAddress: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", confirms: 1},
+	{bundlrName: "avalanche", chainId: 43114, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://api.avax.network/ext/bc/C/rpc", wrappedAddress: "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB", confirms: 1},
+	{bundlrName: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7", symbol: "ETH", providerUrl: "https://mainnet.boba.network/", confirms: 1},
+	{bundlrName: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA", providerUrl: "https://mainnet.boba.network/", wrappedAddress: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000", confirms: 1},
 	// Testnets, used with devnet Bundlr URI. See for details: https://docs.bundlr.network/docs/devnet
-	{name: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", symbol: "MATIC", providerUrl: "https://rpc-mumbai.maticvigil.com/", wrappedAddress: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", confirms: 1}
+	{bundlrName: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", symbol: "MATIC", providerUrl: "https://rpc-mumbai.maticvigil.com/", wrappedAddress: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", confirms: 1}
 ];
 
 acceptToken = (chainId, tokenAddress) => {
@@ -16,7 +17,7 @@ acceptToken = (chainId, tokenAddress) => {
 
 	let acceptToken = false;
 	tokens.forEach((token) => {
-		if(accepted.includes(token.name)) {
+		if(accepted.includes(token.bundlrName)) {
 			if(token.chainId == chainId && token.tokenAddress == tokenAddress) {
 				acceptToken = token;
 				return;
@@ -32,7 +33,7 @@ acceptToken = (chainId, tokenAddress) => {
  */
 getAcceptedPaymentDetails = () => {
 	const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
-	const acceptedDetails = tokens.filter((token) => acceptedPayments.includes(token.name));
+	const acceptedDetails = tokens.filter((token) => acceptedPayments.includes(token.bundlrName));
 	const compressedDetails = [];
 	acceptedDetails.forEach((detail) => {
 		let added = false;

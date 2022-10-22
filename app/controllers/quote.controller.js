@@ -9,6 +9,8 @@ const { acceptToken } = require("./tokens.js");
 const quoteidRegex = /^[a-fA-F0-9]{32}$/;
 
 exports.create = async (req, res) => {
+	console.log(`getQuote endpoint called: ${JSON.stringify(req.body)}`)
+
 	// Validate request
 	if(!req.body) {
 		res.status(400).send({
@@ -199,7 +201,7 @@ exports.create = async (req, res) => {
 
 	let bundlr;
 	try {
-		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.name, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 	}
 	catch(err) {
 		res.status(500).send({
@@ -255,6 +257,8 @@ exports.create = async (req, res) => {
 };
 
 exports.getStatus = async (req, res) => {
+	console.log(`getStatus endpoint called: ${JSON.stringify(req.query)}`)
+
 	if(!req.query || !req.query.quoteId) {
 		res.status(400).send({
 			message: "Error, quoteId required."
@@ -299,6 +303,8 @@ exports.setStatus = async (quoteId, status) => {
 };
 
 exports.getLink = async (req, res) => {
+	console.log(`getLink endpoint called: ${JSON.stringify(req.query)}`)
+
 	if(!req.query || !req.query.quoteId) {
 		res.status(400).send({
 			message: "Error, quoteId required."
