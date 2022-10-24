@@ -272,11 +272,16 @@ exports.upload = async (req, res) => {
 		const wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
 		const transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
 
-		let totalEstimate = transferFromEstimate + sendEthEstimate + transferEstimate;
+		let gasEstimate = transferFromEstimate + sendEthEstimate + transferEstimate;
 		if(tokenDetails.wrappedAddress) {
-			totalEstimate += unwrapEstimate + wrapEstimate;
+			gasEstimate += unwrapEstimate + wrapEstimate;
 		}
-		console.log(`totalEstimate = ${totalEstimate}`);
+		console.log(`gasEstimate = ${gasEstimate}`);
+
+		const feeData = await provider.getFeeData();
+		// Assume all payment chains support EIP-1559 transactions.
+		const priceEstimate = gasEstimate * (feeData.maxFeePerGas + feeData.maxPriorityFeePerGas);
+		console.log(`priceEstimate = ${priceEstimate}`);
 
 		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
 		// If not enough for (1), throw error
