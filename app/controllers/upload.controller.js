@@ -222,7 +222,7 @@ exports.upload = async (req, res) => {
 
 		if(priceWei.gte(quoteTokenAmount)) {
 			res.status(402).send({
-				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}`
+				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`
 			});
 			return;
 		}
@@ -293,10 +293,11 @@ exports.upload = async (req, res) => {
 		// Check server fee token balance
 		const feeTokenBalance = await wallet.getBalance();
 		console.log(`feeTokenBalance = ${feeTokenBalance}`);
-
 		if(feeEstimate.gte(feeTokenBalance)) {
+			const message = `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`;
+			console.log(message);
 			res.status(503).send({
-				message: `Estimated fees to process payment exceed fee token reserves.`
+				message: message
 			});
 			return;
 		}
@@ -304,9 +305,24 @@ exports.upload = async (req, res) => {
 		// Check allowance
 		const allowance = await token.allowance(userAddress, wallet.address);
 		console.log(`allowance = ${allowance}`);
+		if(allowance.lt(priceWei)) {
+			const message = `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`;
+			console.log(message);
+			res.status(400).send({
+				message: message
+			});
+			return;
+		}
 
-		if(allowance.lte(priceWei)) {
-			console.log(`Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}, allowance: ${allowance}`);
+		// Check that user has sufficient funds
+		const userBalance = await token.balanceOf(userAddress);
+		console.log(`userBalance = ${userBalance}`);
+		if(userBalance.lt(priceWei)) {
+			const message = `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`;
+			console.log(message);
+			res.status(400).send({
+				message: message
+			});
 			return;
 		}
 
