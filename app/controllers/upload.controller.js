@@ -244,9 +244,6 @@ exports.upload = async (req, res) => {
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-		// Check server gas token balance
-		const nativeBalance = wallet.getBalance();
-
 		// Create ERC20 contract handle
 		const abi = [
 			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
@@ -289,17 +286,16 @@ exports.upload = async (req, res) => {
 		const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
 		console.log(`feeEstimate = ${feeEstimate}`);
 
-		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
-		// If not enough for (1), throw error
-		// If enough for (1) but not enough for (2)...throw error? OR request extra funds from user to cover gas costs?
+		// Check server native token balance
+		const nativeBalance = wallet.getBalance();
+		console.log(`nativeBalance = ${nativeBalance}`);
 
-		res.send(null); // send 200
-
-		// change status
-		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
-
-
-
+		if(feeEstimate.gte(nativeBalance)) {
+			res.status(503).send({
+				message: `Estimated fees to process payment exceed native token reserves.`
+			});
+			return;
+		}
 
 		console.log(`payment token address = ${token.address}`);
 
@@ -312,7 +308,10 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
-		// TODO: Set status
+		res.send(null); // send 200
+
+		// change status
+		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 
 		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const confirms = tokenDetails.confirms;
@@ -341,8 +340,9 @@ exports.upload = async (req, res) => {
 
 		// TODO: Set status
 
+		// TODO: Check Bundlr account balance
+
 		// Fund our EOA's Bundlr Account
-		// TODO: Check the balance first
 		try {
 			let response = await bundlr.fund(bundlrPriceWei);
 			// TODO: should we record the response values?
