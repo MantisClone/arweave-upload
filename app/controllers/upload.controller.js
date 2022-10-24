@@ -286,8 +286,8 @@ exports.upload = async (req, res) => {
 
 		const feeData = await provider.getFeeData();
 		// Assume all payment chains support EIP-1559 transactions.
-		const priceEstimate = gasEstimate * (feeData.maxFeePerGas + feeData.maxPriorityFeePerGas);
-		console.log(`priceEstimate = ${priceEstimate}`);
+		const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
+		console.log(`feeEstimate = ${feeEstimate}`);
 
 		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
 		// If not enough for (1), throw error
