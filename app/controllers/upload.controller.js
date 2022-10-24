@@ -205,6 +205,7 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		let bundlrPriceWei;
 		let priceWei;
 		try {
 			bundlrPriceWei = await bundlr.getPrice(quote.size)
