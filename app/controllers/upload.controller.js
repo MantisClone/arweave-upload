@@ -272,6 +272,12 @@ exports.upload = async (req, res) => {
 		const wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
 		const transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
 
+		console.log(`transferFromEstimate = ${transferFromEstimate}`);
+		console.log(`unwrapEstimate = ${unwrapEstimate}`);
+		console.log(`sendEthEstimate = ${sendEthEstimate}`);
+		console.log(`wrapEstimate = ${wrapEstimate}`);
+		console.log(`transferEstimate = ${transferEstimate}`);
+
 		let gasEstimate = transferFromEstimate + sendEthEstimate + transferEstimate;
 		if(tokenDetails.wrappedAddress) {
 			gasEstimate += unwrapEstimate + wrapEstimate;
