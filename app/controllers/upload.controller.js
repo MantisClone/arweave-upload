@@ -287,7 +287,7 @@ exports.upload = async (req, res) => {
 		console.log(`feeEstimate = ${feeEstimate}`);
 
 		// Check server native token balance
-		const nativeBalance = wallet.getBalance();
+		const nativeBalance = await wallet.getBalance();
 		console.log(`nativeBalance = ${nativeBalance}`);
 
 		if(feeEstimate.gte(nativeBalance)) {
