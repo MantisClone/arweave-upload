@@ -97,7 +97,6 @@ exports.upload = async (req, res) => {
 		});
 		return;
 	}
-	// TODO: check nonce
 
 	const signature = req.body.signature;
 	if(typeof signature === "undefined") {
