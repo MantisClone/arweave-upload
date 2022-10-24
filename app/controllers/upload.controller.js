@@ -261,22 +261,22 @@ exports.upload = async (req, res) => {
 
 		// Estimate cost of:
 		// 1. Pull ERC-20 token from userAddress
-		const transferFromEstimate = token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
+		const transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
 		// 2. Unwrap if necessary
-		const unwrapEstimate = token.estimateGas.withdraw(priceWei);
+		const unwrapEstimate = await token.estimateGas.withdraw(priceWei);
 		// 3. Push funds to Bundlr account
 		// TODO: Don't hardcode Bundlr Address. Or maybe it's fine.
 		const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
-		const sendEthEstimate = wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei});
+		const sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei});
 		// 4. Possibly refund in case of non-recoverable failure
-		const wrapEstimate = token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
-		const transferEstimate = token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
+		const wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
+		const transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
 
 		let totalEstimate = transferFromEstimate + sendEthEstimate + transferEstimate;
 		if(tokenDetails.wrappedAddress) {
 			totalEstimate += unwrapEstimate + wrapEstimate;
 		}
-		console.log(totalEstimate.toString());
+		console.log(`totalEstimate = ${totalEstimate}`);
 
 		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
 		// If not enough for (1), throw error
