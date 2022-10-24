@@ -226,7 +226,7 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
-		// Create provider and wallet
+		// Create provider
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
@@ -242,9 +242,11 @@ exports.upload = async (req, res) => {
 			provider = ethers.getDefaultProvider(jsonRpcUri);
 		}
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
+
+		// Create wallet
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-		// Create ERC20 contract handle
+		// Create payment token contract handle
 		const abi = [
 			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
 			'function allowance(address owner, address spender) external view returns (uint256)',
@@ -255,6 +257,7 @@ exports.upload = async (req, res) => {
 		];
 		const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
 		const token = new ethers.Contract(tokenAddress, abi, wallet);
+		console.log(`payment token address = ${token.address}`);
 
 		// Estimate cost of:
 		// 1. Pull ERC-20 token from userAddress
@@ -286,18 +289,16 @@ exports.upload = async (req, res) => {
 		const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
 		console.log(`feeEstimate = ${feeEstimate}`);
 
-		// Check server native token balance
-		const nativeBalance = await wallet.getBalance();
-		console.log(`nativeBalance = ${nativeBalance}`);
+		// Check server fee token balance
+		const feeTokenBalance = await wallet.getBalance();
+		console.log(`feeTokenBalance = ${feeTokenBalance}`);
 
-		if(feeEstimate.gte(nativeBalance)) {
+		if(feeEstimate.gte(feeTokenBalance)) {
 			res.status(503).send({
-				message: `Estimated fees to process payment exceed native token reserves.`
+				message: `Estimated fees to process payment exceed fee token reserves.`
 			});
 			return;
 		}
-
-		console.log(`payment token address = ${token.address}`);
 
 		// Check allowance
 		const allowance = await token.allowance(userAddress, wallet.address);
