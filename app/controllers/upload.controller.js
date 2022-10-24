@@ -278,9 +278,9 @@ exports.upload = async (req, res) => {
 		console.log(`wrapEstimate = ${wrapEstimate}`);
 		console.log(`transferEstimate = ${transferEstimate}`);
 
-		let gasEstimate = transferFromEstimate + sendEthEstimate + transferEstimate;
+		let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
 		if(tokenDetails.wrappedAddress) {
-			gasEstimate += unwrapEstimate + wrapEstimate;
+			gasEstimate = gasEstimate.add(unwrapEstimate).add(wrapEstimate);
 		}
 		console.log(`gasEstimate = ${gasEstimate}`);
 
