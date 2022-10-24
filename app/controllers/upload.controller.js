@@ -226,18 +226,7 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
-		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
-		// 1. Pull wrapped token from userAddress
-		// 2. Unwrap
-		// If not enough for (1), throw error
-		// If enough for (1) but not enough for (2)...throw error? OR request extra funds from user to cover gas costs?
-
-		res.send(null); // send 200
-
-		// change status
-		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
-
-		// Pull payment from user's account using transferFrom(userAddress, amount)
+		// Create provider and wallet
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
@@ -252,18 +241,54 @@ exports.upload = async (req, res) => {
 			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
 			provider = ethers.getDefaultProvider(jsonRpcUri);
 		}
-
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
-
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+		// Check server gas token balance
+		const nativeBalance = wallet.getBalance();
+
+		// Create ERC20 contract handle
 		const abi = [
 			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
 			'function allowance(address owner, address spender) external view returns (uint256)',
 			'function balanceOf(address owner) external view returns (uint256)',
-			'function withdraw(uint256 value) external'
+			'function deposit(uint256 value) external',
+			'function withdraw(uint256 value) external',
+			'function transfer(address to, uint256 value) external returns (bool)'
 		];
 		const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
 		const token = new ethers.Contract(tokenAddress, abi, wallet);
+
+		// Estimate cost of:
+		// 1. Pull ERC-20 token from userAddress
+		const transferFromEstimate = token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
+		// 2. Unwrap if necessary
+		const unwrapEstimate = token.estimateGas.withdraw(priceWei);
+		// 3. Push funds to Bundlr account
+		// TODO: Don't hardcode Bundlr Address. Or maybe it's fine.
+		const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
+		const sendEthEstimate = wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei});
+		// 4. Possibly refund in case of non-recoverable failure
+		const wrapEstimate = token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
+		const transferEstimate = token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
+
+		let totalEstimate = transferFromEstimate + sendEthEstimate + transferEstimate;
+		if(tokenDetails.wrappedAddress) {
+			totalEstimate += unwrapEstimate + wrapEstimate;
+		}
+		console.log(totalEstimate.toString());
+
+		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
+		// If not enough for (1), throw error
+		// If enough for (1) but not enough for (2)...throw error? OR request extra funds from user to cover gas costs?
+
+		res.send(null); // send 200
+
+		// change status
+		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
+
+
+
 
 		console.log(`payment token address = ${token.address}`);
 
@@ -278,7 +303,7 @@ exports.upload = async (req, res) => {
 
 		// TODO: Set status
 
-		// Pull payment from userAddress
+		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const confirms = tokenDetails.confirms;
 		try {
 			await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
@@ -292,7 +317,7 @@ exports.upload = async (req, res) => {
 		// TODO: Set status
 
 		// If payment is wrapped, unwrap it (ex. WETH -> ETH)
-		if(tokenDetails.wrappedAddress !== null) {
+		if(tokenDetails.wrappedAddress) {
 			try {
 				await (await token.withdraw(priceWei)).wait(confirms);
 			}
