@@ -306,9 +306,7 @@ exports.upload = async (req, res) => {
 			} */
 		}
 		catch(err) {
-			// can't fund the quote
-			console.log("Can't fund the quote.")
-			console.log(err.message);
+			errorResponse(res, 500, "Can't fund the quote.");
 			return;
 		}
 
