@@ -12,6 +12,7 @@ describe("DBS Arweave Upload", function () {
         it("should respond 400 when request is empty", async function () {
             let code;
             let message;
+            // Call getQuote without any arguments
             await axios.post(`http://localhost:8081/getQuote`)
             .then((res) => {
                 code = res.status;
@@ -22,11 +23,8 @@ describe("DBS Arweave Upload", function () {
                 message = err.response.data.message;
             });
 
-            console.log(code);
-            console.log(message);
-
             expect(code).to.equal(400);
-            expect(message).to.contain("Content can not be empty!");
+            expect(message).to.contain("Missing type");
         });
         it("should respond", async function () {
             const response = await getQuote(wallet);
