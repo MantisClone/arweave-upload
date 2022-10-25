@@ -15,7 +15,7 @@ describe("DBS Arweave Upload", function () {
             await axios.post(`http://localhost:8081/getQuote`, {})
             .then((res) => {
                 code = res.status;
-                message = res.message;
+                message = res.data;
             })
             .catch((err) => {
                 code = err.response.status;
