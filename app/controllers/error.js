@@ -3,4 +3,4 @@ errorResponse = (res, statusCode, message) => {
     res.status(statusCode).send({message: message});
 }
 
-exports = { errorResponse };
+module.exports = { errorResponse };
