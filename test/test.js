@@ -23,7 +23,6 @@ describe("DBS Arweave Upload", function () {
                 code = err.response.status;
                 message = err.response.data.message;
             });
-
             expect(code).to.equal(400);
             expect(message).to.contain("Missing type");
         });
