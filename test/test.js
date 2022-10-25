@@ -9,6 +9,7 @@ describe("DBS Arweave Upload", function () {
     console.log("Wallet address: " + wallet.address);
 
     describe("getQuote", function () {
+
         it("should respond 400 when request is empty", async function () {
             let code;
             let message;
@@ -26,6 +27,7 @@ describe("DBS Arweave Upload", function () {
             expect(code).to.equal(400);
             expect(message).to.contain("Missing type");
         });
+
         it("should respond", async function () {
             const response = await getQuote(wallet);
             expect(response).to.exist;

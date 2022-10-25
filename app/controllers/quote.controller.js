@@ -20,9 +20,7 @@ exports.create = async (req, res) => {
 	// validate fields
 	let type = req.body.type;
 	if(typeof type === "undefined") {
-		res.status(400).send({
-			message: "Missing type."
-		});
+		errorResponse(res, 400, "Missing type.");
 		return;
 	}
 	if(typeof type !== "string") {
