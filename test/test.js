@@ -10,8 +10,11 @@ describe("DBS Arweave Upload", function () {
 
     describe("getQuote", function () {
         it("should respond 400 when request is empty", async function () {
-            const res = await axios.post(`http://localhost:8081/getQuote`, {});
-            console.log("hello world");
+            const res = await axios.post(`http://localhost:8081/getQuote`, {})
+            .catch(() => {
+                //do nothing
+            });
+
             expect(res.status).to.equal(400);
             expect(res.message).to.equal("Content can not be empty!");
         });
