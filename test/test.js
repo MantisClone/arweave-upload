@@ -12,14 +12,14 @@ describe("DBS Arweave Upload", function () {
         it("should respond 400 when request is empty", async function () {
             let code;
             let message;
-            await axios.post(`http://localhost:8081/getQuote`, {})
+            await axios.post(`http://localhost:8081/getQuote`)
             .then((res) => {
                 code = res.status;
-                message = res.data;
+                message = res.data.message;
             })
             .catch((err) => {
                 code = err.response.status;
-                message = err.response.data;
+                message = err.response.data.message;
             });
 
             console.log(code);
