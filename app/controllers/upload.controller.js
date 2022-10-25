@@ -88,7 +88,7 @@ exports.upload = async (req, res) => {
 	await Quote.get(quoteId, async (err, quote) => {
 		if(err) {
 			if(err.code == 404) {
-				errorResponse(res, 404, "Quote not found");
+				errorResponse(res, 404, err.message);
 				return;
 			}
 			errorResponse(res, 500, err.message || "Error occurred while validating quote.");
