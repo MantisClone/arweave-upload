@@ -13,9 +13,7 @@ exports.create = async (req, res) => {
 
 	// Validate request
 	if(!req.body) {
-		res.status(400).send({
-			message: "Content can not be empty!"
-		});
+		errorResponse(res, 400, "Content can not be empty!");
 		return;
 	}
 

@@ -9,6 +9,11 @@ describe("DBS Arweave Upload", function () {
     console.log("Wallet address: " + wallet.address);
 
     describe("getQuote", function () {
+        it("should respond 400 when request is empty", async function () {
+            const res = await axios.post(`http://localhost:8081/getQuote`, {});
+            expect(res.status).to.equal(400);
+            expect(res.message).to.equal("Content can not be empty!");
+        });
         it("should respond", async function () {
             const response = await getQuote(wallet);
             expect(response).to.exist;
