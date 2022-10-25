@@ -22,6 +22,9 @@ describe("DBS Arweave Upload", function () {
                 message = err.response.data;
             });
 
+            console.log(code);
+            console.log(message);
+
             expect(code).to.equal(400);
             expect(message).to.contain("Content can not be empty!");
         });
