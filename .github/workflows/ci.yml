@@ -34,7 +34,7 @@ jobs:
       run: |
         npm start &
         sleep 2
-        npm test
+        npm test -- --full-trace
       env:
         # Server env vars
         ACCEPTED_PAYMENTS: ethereum,matic,boba,boba-eth
