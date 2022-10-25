@@ -216,7 +216,7 @@ exports.getStatus = async (req, res) => {
 	await Quote.getStatus(quoteId, (err, data) => {
 		if(err) {
 			if(err.code == 404) {
-				errorResponse(res, 404, 0);
+				errorResponse(res, 404, err.message);
 				return;
 			}
 			errorResponse(res, 500, err.message || "Error occurred while looking up status.");
