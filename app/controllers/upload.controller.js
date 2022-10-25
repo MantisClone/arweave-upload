@@ -205,6 +205,7 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		let bundlrPriceWei;
 		let priceWei;
 		try {
 			bundlrPriceWei = await bundlr.getPrice(quote.size)
@@ -221,23 +222,12 @@ exports.upload = async (req, res) => {
 
 		if(priceWei.gte(quoteTokenAmount)) {
 			res.status(402).send({
-				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}`
+				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`
 			});
 			return;
 		}
 
-		// TODO: Check server gas token balance, ensure sufficient for 2 transactions:
-		// 1. Pull wrapped token from userAddress
-		// 2. Unwrap
-		// If not enough for (1), throw error
-		// If enough for (1) but not enough for (2)...throw error? OR request extra funds from user to cover gas costs?
-
-		res.send(null); // send 200
-
-		// change status
-		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
-
-		// Pull payment from user's account using transferFrom(userAddress, amount)
+		// Create provider
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
@@ -252,33 +242,96 @@ exports.upload = async (req, res) => {
 			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
 			provider = ethers.getDefaultProvider(jsonRpcUri);
 		}
-
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 
+		// Create wallet
 		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+		// Create payment token contract handle
 		const abi = [
 			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
 			'function allowance(address owner, address spender) external view returns (uint256)',
 			'function balanceOf(address owner) external view returns (uint256)',
-			'function withdraw(uint256 value) external'
+			'function deposit(uint256 value) external',
+			'function withdraw(uint256 value) external',
+			'function transfer(address to, uint256 value) external returns (bool)'
 		];
 		const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
 		const token = new ethers.Contract(tokenAddress, abi, wallet);
-
 		console.log(`payment token address = ${token.address}`);
+
+		// Estimate cost of:
+		// 1. Pull ERC-20 token from userAddress
+		const transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
+		// 2. Unwrap if necessary
+		const unwrapEstimate = await token.estimateGas.withdraw(priceWei);
+		// 3. Push funds to Bundlr account
+		// TODO: Don't hardcode Bundlr Address. Or maybe it's fine.
+		const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
+		const sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei});
+		// 4. Possibly refund in case of non-recoverable failure
+		const wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
+		const transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
+
+		console.log(`transferFromEstimate = ${transferFromEstimate}`);
+		console.log(`unwrapEstimate = ${unwrapEstimate}`);
+		console.log(`sendEthEstimate = ${sendEthEstimate}`);
+		console.log(`wrapEstimate = ${wrapEstimate}`);
+		console.log(`transferEstimate = ${transferEstimate}`);
+
+		let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
+		if(tokenDetails.wrappedAddress) {
+			gasEstimate = gasEstimate.add(unwrapEstimate).add(wrapEstimate);
+		}
+		console.log(`gasEstimate = ${gasEstimate}`);
+
+		const feeData = await provider.getFeeData();
+		// Assume all payment chains support EIP-1559 transactions.
+		const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
+		console.log(`feeEstimate = ${feeEstimate}`);
+
+		// Check server fee token balance
+		const feeTokenBalance = await wallet.getBalance();
+		console.log(`feeTokenBalance = ${feeTokenBalance}`);
+		if(feeEstimate.gte(feeTokenBalance)) {
+			const message = `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`;
+			console.log(message);
+			res.status(503).send({
+				message: message
+			});
+			return;
+		}
 
 		// Check allowance
 		const allowance = await token.allowance(userAddress, wallet.address);
 		console.log(`allowance = ${allowance}`);
-
-		if(allowance.lte(priceWei)) {
-			console.log(`Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei.toString()}, allowance: ${allowance}`);
+		if(allowance.lt(priceWei)) {
+			const message = `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`;
+			console.log(message);
+			res.status(400).send({
+				message: message
+			});
 			return;
 		}
 
-		// TODO: Set status
+		// Check that user has sufficient funds
+		const userBalance = await token.balanceOf(userAddress);
+		console.log(`userBalance = ${userBalance}`);
+		if(userBalance.lt(priceWei)) {
+			const message = `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`;
+			console.log(message);
+			res.status(400).send({
+				message: message
+			});
+			return;
+		}
 
-		// Pull payment from userAddress
+		res.send(null); // send 200
+
+		// change status
+		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
+
+		// Pull payment from user's account using transferFrom(userAddress, amount)
 		const confirms = tokenDetails.confirms;
 		try {
 			await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
@@ -292,7 +345,7 @@ exports.upload = async (req, res) => {
 		// TODO: Set status
 
 		// If payment is wrapped, unwrap it (ex. WETH -> ETH)
-		if(tokenDetails.wrappedAddress !== null) {
+		if(tokenDetails.wrappedAddress) {
 			try {
 				await (await token.withdraw(priceWei)).wait(confirms);
 			}
@@ -305,8 +358,9 @@ exports.upload = async (req, res) => {
 
 		// TODO: Set status
 
+		// TODO: Check Bundlr account balance
+
 		// Fund our EOA's Bundlr Account
-		// TODO: Check the balance first
 		try {
 			let response = await bundlr.fund(bundlrPriceWei);
 			// TODO: should we record the response values?
