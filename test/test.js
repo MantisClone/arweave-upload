@@ -11,20 +11,9 @@ describe("DBS Arweave Upload", function () {
     describe("getQuote", function () {
 
         it("should respond 400 when request is empty", async function () {
-            let code;
-            let message;
-            // Call getQuote without any arguments
-            await axios.post(`http://localhost:8081/getQuote`)
-            .then((res) => {
-                code = res.status;
-                message = res.data.message;
-            })
-            .catch((err) => {
-                code = err.response.status;
-                message = err.response.data.message;
-            });
-            expect(code).to.equal(400);
-            expect(message).to.contain("Missing type");
+            let res = await axios.post(`http://localhost:8081/getQuote`).catch((err) => res = err.response);
+            expect(res.status).to.equal(400);
+            expect(res.data.message).to.contain("Missing type");
         });
 
         it("should respond", async function () {
