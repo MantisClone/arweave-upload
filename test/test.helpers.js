@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 exports.getQuote = async (wallet) => {
-    return await axios.post(`http://localhost:8081/getQuote`, {
+    return axios.post(`http://localhost:8081/getQuote`, {
         type: "arweave",
         userAddress: wallet.address,
         files: [{length: 119762}, {length: 13}],
