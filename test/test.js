@@ -16,9 +16,8 @@ describe("DBS Arweave Upload", function () {
             expect(res.data.message).to.contain("Missing type");
         });
 
-        it("should respond", async function () {
+        it("should respond 200 when request is valid", async function () {
             const response = await getQuote(wallet);
-            expect(response).to.exist;
             expect(response.status).to.equal(200);
         });
     });
