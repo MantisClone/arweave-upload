@@ -23,7 +23,7 @@ app.use(function(req, res, next) {
 app.use(bodyParser.json());
 app.use(function(error, req, res, next) {
 	// catch json error
-	errorResponse(res, 400, "Invalid JSON");
+	errorResponse(req, res, 400, "Invalid JSON");
 });
 
 // parse requests of content-type - application/x-www-form-urlencoded
