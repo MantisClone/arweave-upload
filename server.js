@@ -4,6 +4,7 @@ const axios = require("axios");
 const ethers = require('ethers');
 const { getAcceptedPaymentDetails } = require("./app/controllers/tokens.js");
 const { checkConfig } = require("./app/controllers/config.js");
+const { errorResponse } = require("./app/controllers/error.js");
 
 const app = express();
 app.disable('x-powered-by');
