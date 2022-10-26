@@ -1,5 +1,5 @@
 errorResponse = (res, statusCode, message) => {
-    console.error(`error response: ${statusCode}: ${message}`);
+    console.error(`${req.path} response: ${statusCode}: ${message}`);
     res.status(statusCode).send({message: message});
 }
 
