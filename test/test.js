@@ -46,7 +46,8 @@ describe("DBS Arweave Upload", function () {
                     nonce: nonce,
                     signature: signature,
                 }).catch((err) => err.response);
-                expect(uploadResponse.status).to.equal(200);
+                expect(uploadResponse.status).equals(400);
+                expect(uploadResponse.data.message).contains("hello")
 
                 let status
                 for(let i = 0; i < 15; i++) {
