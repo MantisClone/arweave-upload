@@ -11,14 +11,21 @@ describe("DBS Arweave Upload", function () {
     describe("getQuote", function () {
 
         it("should respond 400 when request is empty", async function () {
-            let res = await axios.post(`http://localhost:8081/getQuote`).catch((err) => err.response);
-            expect(res.status).to.equal(400);
-            expect(res.data.message).to.contain("Missing type");
+            const res = await axios.post(`http://localhost:8081/getQuote`).catch((err) => err.response);
+            expect(res.status).equals(400);
+            expect(res.data.message).contains("Missing type");
         });
 
         it("should respond 200 when request is valid", async function () {
-            const response = await getQuote(wallet);
-            expect(response.status).to.equal(200);
+            const res = await getQuote(wallet).catch((err) => err.response);
+            expect(res.status).equals(200);
+            expect(res.data).contains.all.keys(
+                "quoteId",
+                "chainId",
+                "tokenAddress",
+                "tokenAmount",
+                "approveAddress"
+            );
         });
     });
 
@@ -28,8 +35,8 @@ describe("DBS Arweave Upload", function () {
 
             it("should fail to pull funds from user account", async function() {
                 this.timeout(20000);
-                const quote = await getQuote(wallet).then((res) => res.data);
-                console.log(`quote = ${JSON.stringify(quote)}`);
+                const quoteResponse = await getQuote(wallet).catch((err) => err.response);
+                const quote = quoteResponse.data;
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
                 const signature = await wallet.signMessage(message);
@@ -38,8 +45,7 @@ describe("DBS Arweave Upload", function () {
                     files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
                     nonce: nonce,
                     signature: signature,
-                });
-                expect(uploadResponse).to.exist;
+                }).catch((err) => err.response);
                 expect(uploadResponse.status).to.equal(200);
 
                 let status
