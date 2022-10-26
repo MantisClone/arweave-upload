@@ -35,8 +35,8 @@ describe("DBS Arweave Upload", function () {
 
             it("should fail to pull funds from user account", async function() {
                 this.timeout(20000);
-                const quoteResponse = await getQuote(wallet).catch((err) => err.response);
-                const quote = quoteResponse.data;
+                const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
+                const quote = getQuoteResponse.data;
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
                 const signature = await wallet.signMessage(message);
