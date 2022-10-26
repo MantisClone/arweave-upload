@@ -1,7 +1,7 @@
 const Bundlr = require("@bundlr-network/client");
 
 const axios = require('axios');
-const Upload = require("../models/upload.model.js");
+const File = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
@@ -316,7 +316,7 @@ exports.upload = async (req, res) => {
 
 		let files_uploaded = 0;
 		await Promise.all(files.map(async (file, index) => {
-			await Upload.get(quoteId, index, async (err, quotedFile) => {
+			await File.get(quoteId, index, async (err, quotedFile) => {
 				if(err) {
 					console.log(err);
 					return;
@@ -361,7 +361,7 @@ exports.upload = async (req, res) => {
 						});
 						uploader.on("done", async (finishRes) => {
 							const transactionId = finishRes.data.id;
-							Upload.setHash(quoteId, index, transactionId);
+							File.setHash(quoteId, index, transactionId);
 
 							// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
 							try {
