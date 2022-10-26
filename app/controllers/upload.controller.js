@@ -207,6 +207,22 @@ exports.upload = async (req, res) => {
 		const token = new ethers.Contract(tokenAddress, abi, wallet);
 		console.log(`payment token address = ${token.address}`);
 
+		// Check allowance
+		const allowance = await token.allowance(userAddress, wallet.address);
+		console.log(`allowance = ${allowance}`);
+		if(allowance.lt(priceWei)) {
+			errorResponse(req, res, 400, `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`);
+			return;
+		}
+
+		// Check that user has sufficient funds
+		const userBalance = await token.balanceOf(userAddress);
+		console.log(`userBalance = ${userBalance}`);
+		if(userBalance.lt(priceWei)) {
+			errorResponse(req, res, 400, `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`);
+			return;
+		}
+
 		// Estimate cost of:
 		// 1. Pull ERC-20 token from userAddress
 		const transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
@@ -242,22 +258,6 @@ exports.upload = async (req, res) => {
 		console.log(`feeTokenBalance = ${feeTokenBalance}`);
 		if(feeEstimate.gte(feeTokenBalance)) {
 			errorResponse(req, res, 503, `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`);
-			return;
-		}
-
-		// Check allowance
-		const allowance = await token.allowance(userAddress, wallet.address);
-		console.log(`allowance = ${allowance}`);
-		if(allowance.lt(priceWei)) {
-			errorResponse(req, res, 400, `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`);
-			return;
-		}
-
-		// Check that user has sufficient funds
-		const userBalance = await token.balanceOf(userAddress);
-		console.log(`userBalance = ${userBalance}`);
-		if(userBalance.lt(priceWei)) {
-			errorResponse(req, res, 400, `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`);
 			return;
 		}
 
