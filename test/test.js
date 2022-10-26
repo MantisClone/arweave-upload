@@ -47,19 +47,10 @@ describe("DBS Arweave Upload", function () {
                     signature: signature,
                 }).catch((err) => err.response);
                 expect(uploadResponse.status).equals(400);
-                expect(uploadResponse.data.message).contains("hello")
+                expect(uploadResponse.data.message).contains("Allowance is less than current rate")
 
-                let status
-                for(let i = 0; i < 15; i++) {
-                    let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
-                    expect(getStatusResponse).to.exist;
-                    expect(getStatusResponse.status).to.equal(200);
-                    status = getStatusResponse.data.status;
-                    console.log(`status = ${status}`);
-                    if(status >= 5) break;
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                expect(status).to.be.equal(6);
+                const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
+                expect(getStatusResponse.data.status).equals(6);
             });
         })
 
