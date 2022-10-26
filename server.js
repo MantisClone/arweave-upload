@@ -13,8 +13,6 @@ if(!checkConfig()) {
 	process.exit(1);
 }
 
-// TODO: validate config
-
 app.use(function(req, res, next) {
     next(); // moves to next middleware
 });
