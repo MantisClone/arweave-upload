@@ -112,20 +112,24 @@ exports.upload = async (req, res) => {
 			return;
 		}
 
+		let old_nonce;
 		Nonce.get(userAddress, async (err, data) => {
 			if(err) {
 				errorResponse(req, res, 500, err.message || "Error occurred while validating nonce.");
 				return;
 			}
 			if(data) {
-				const old_nonce = data.nonce;
-				if(parseFloat(nonce) <= parseFloat(old_nonce)) {
-					errorResponse(req, res, 403, "Invalid nonce.");
-					return;
-				}
+				old_nonce = data.nonce
 			}
-			Nonce.set(userAddress, nonce);
 		});
+
+		console.log(old_nonce);
+		if(parseFloat(nonce) <= parseFloat(old_nonce)) {
+			errorResponse(req, res, 403, "Invalid nonce.");
+			return;
+		}
+		Nonce.set(userAddress, nonce);
+
 
 		// see if token still accepted
 		const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
