@@ -9,10 +9,36 @@ describe("DBS Arweave Upload", function () {
     console.log("Wallet address: " + wallet.address);
 
     describe("getQuote", function () {
-        it("should respond", async function () {
-            const response = await getQuote(wallet);
-            expect(response).to.exist;
-            expect(response.status).to.equal(200);
+
+        it("should respond 400 when request is empty", async function () {
+            const res = await axios.post(`http://localhost:8081/getQuote`).catch((err) => err.response);
+            expect(res.status).equals(400);
+            expect(res.data.message).contains("Missing type");
+        });
+
+        it("should respond 200 when request is valid", async function () {
+            const res = await getQuote(wallet).catch((err) => err.response);
+            expect(res.status).equals(200);
+            expect(res.data).contains.all.keys(
+                "quoteId",
+                "chainId",
+                "tokenAddress",
+                "tokenAmount",
+                "approveAddress"
+            );
+        });
+
+        it("should respond 200 when request is valid, even when file is 1 TB", async function () {
+            const TB = 1_000_000_000_000;
+            const res = await getQuote(wallet, TB).catch((err) => err.response);
+            expect(res.status).equals(200);
+            expect(res.data).contains.all.keys(
+                "quoteId",
+                "chainId",
+                "tokenAddress",
+                "tokenAmount",
+                "approveAddress"
+            );
         });
     });
 
@@ -21,10 +47,10 @@ describe("DBS Arweave Upload", function () {
         describe("without approval", function () {
 
             it("should fail to pull funds from user account", async function() {
-                this.timeout(20000);
+                this.timeout(20 * 1000);
 
-                const quoteResponse = await getQuote(wallet);
-                const quote = quoteResponse.data;
+                const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
+                const quote = getQuoteResponse.data;
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
@@ -34,26 +60,18 @@ describe("DBS Arweave Upload", function () {
                     files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
                     nonce: nonce,
                     signature: signature,
-                });
-                expect(uploadResponse).to.exist;
-                expect(uploadResponse.status).to.equal(200);
+                }).catch((err) => err.response);
+                expect(uploadResponse.status).equals(400);
+                expect(uploadResponse.data.message).contains("Allowance is less than current rate")
 
-                let status
-                for(let i = 0; i < 15; i++) {
-                    let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
-                    expect(getStatusResponse).to.exist;
-                    expect(getStatusResponse.status).to.equal(200);
-                    status = getStatusResponse.data.status;
-                    console.log(`status = ${status}`);
-                    if(status >= 5) break;
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                expect(status).to.be.equal(6);
+                const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
+                expect(getStatusResponse.data.status).equals(1);
             });
         })
 
         describe("with approval", function () {
-            this.timeout(60000);
+            const timeoutSeconds = 120;
+            this.timeout(timeoutSeconds * 1000);
 
             const abi = [
                 'function approve(address, uint256) external returns (bool)',
@@ -80,20 +98,20 @@ describe("DBS Arweave Upload", function () {
                     nonce: nonce,
                     signature: signature,
                 });
-                expect(uploadResponse).to.exist;
-                expect(uploadResponse.status).to.equal(200);
+                expect(uploadResponse.status).equals(200);
+                expect(uploadResponse.data).equals('');
+
 
                 let status
-                for(let i = 0; i < 60; i++) {
+                for(let i = 0; i < timeoutSeconds; i++) {
                     let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
                     expect(getStatusResponse).to.exist;
                     expect(getStatusResponse.status).to.equal(200);
                     status = getStatusResponse.data.status;
-                    console.log(`status = ${status}`);
                     if(status >= 5) break;
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
-                expect(status).to.be.equal(5);
+                expect(status).equals(5);
             });
         });
     });

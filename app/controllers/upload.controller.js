@@ -1,114 +1,87 @@
 const Bundlr = require("@bundlr-network/client");
 
 const axios = require('axios');
-const Upload = require("../models/upload.model.js");
+const File = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
 const { QUOTE_STATUS_PAYMENT_FAILED } = require("../models/quote.model.js");
+const { errorResponse } = require("./error.js");
 
 exports.upload = async (req, res) => {
-	console.log(`upload endpoint called: ${JSON.stringify(req.body)}`)
+	console.log(`upload request: ${JSON.stringify(req.body)}`)
 
 	// Validate request
 	if(!req.body) {
-		res.status(400).send({
-			message: "Content can not be empty!"
-		});
+		errorResponse(req, res, 400, "Content can not be empty!");
 		return;
 	}
 
 	// validate fields
 	const quoteId = req.body.quoteId;
 	if(typeof quoteId === "undefined") {
-		res.status(400).send({
-			message: "Missing quoteId."
-		});
+		errorResponse(req, res, 400, "Missing quoteId.");
 		return;
 	}
 	if(typeof quoteId !== "string") {
-		res.status(400).send({
-			message: "Invalid quoteId."
-		});
+		errorResponse(req, res, 400, "Invalid quoteId.");
 		return;
 	}
 
 	const files = req.body.files;
 	if(typeof files === "undefined") {
-		res.status(400).send({
-			message: "Missing files field."
-		});
+		errorResponse(req, res, 400, "Missing files field.");
 		return;
 	}
 	if(typeof files !== "object" || !Array.isArray(files)) {
-		res.status(400).send({
-			message: "Invalid files field."
-		});
+		errorResponse(req, res, 400, "Invalid files field.");
 		return;
 	}
 	if(files.length == 0) {
-		res.status(400).send({
-			message: "Empty files field."
-		});
+		errorResponse(req, res, 400, "Empty files field.");
 		return;
 	}
 
 	if(files.length > 64) {
-		res.status(400).send({
-			message: "Too many files. Max 64."
-		});
+		errorResponse(req, res, 400, "Too many files. Max 64.");
 		return;
 	}
 
 	const cidRegex = /^(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,}|F[0-9A-F]{50,})$/i;
 	for(let i = 0; i < files.length; i++) {
 		if(typeof files[i] !== "string") {
-			res.status(400).send({
-				message: `Invalid files field on index ${i}.`
-			});
+			errorResponse(req, res, 400, `Invalid files field on index ${i}.`);
 			return;
 		}
 		// TODO: validate URL format better
 		if(!files[i].startsWith('ipfs://')) {
-			res.status(400).send({
-				message: `Invalid files URI on index ${i}. Must be ipfs://<CID>`
-			});
+			errorResponse(req, res, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
 			return;
 		}
 		if(!cidRegex.test(files[i].substring(7))) {
-			res.status(400).send({
-				message: `Invalid files URI on index ${i}. Must be ipfs://<CID>`
-			});
+			errorResponse(req, res, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
 			return;
 		}
 	}
 
 	const nonce = req.body.nonce;
 	if(typeof nonce === "undefined") {
-		res.status(400).send({
-			message: "Missing nonce."
-		});
+		errorResponse(req, res, 400, "Missing nonce.");
 		return;
 	}
 	if(typeof nonce !== "number") {
-		res.status(400).send({
-			message: "Invalid nonce."
-		});
+		errorResponse(req, res, 400, "Invalid nonce.");
 		return;
 	}
 
 	const signature = req.body.signature;
 	if(typeof signature === "undefined") {
-		res.status(400).send({
-			message: "Missing signature."
-		});
+		errorResponse(req, res, 400, "Missing signature.");
 		return;
 	}
 	if(typeof signature !== "string") {
-		res.status(400).send({
-			message: "Invalid signature."
-		});
+		errorResponse(req, res, 400, "Invalid signature.");
 		return;
 	}
 
@@ -116,15 +89,10 @@ exports.upload = async (req, res) => {
 	await Quote.get(quoteId, async (err, quote) => {
 		if(err) {
 			if(err.code == 404) {
-				res.status(404).send({
-					message: "Quote not found"
-				});
+				errorResponse(req, res, 404, err.message);
 				return;
 			}
-			res.status(500).send({
-				message:
-					err.message || "Error occurred while validating quote."
-			});
+			errorResponse(req, res, 500, err.message || "Error occurred while validating quote.");
 			return;
 		}
 
@@ -135,33 +103,24 @@ exports.upload = async (req, res) => {
 			signerAddress = ethers.utils.verifyMessage(message, signature);
 		}
 		catch(err) {
-			res.status(403).send({
-				message: "Invalid signature."
-			});
+			errorResponse(req, res, 403, "Invalid signature.");
 			return;
 		}
 
 		if(signerAddress != userAddress) {
-			res.status(403).send({
-				message: "Invalid signature."
-			});
+			errorResponse(req, res, 403, "Invalid signature.");
 			return;
 		}
 
 		Nonce.get(userAddress, async (err, data) => {
 			if(err) {
-				res.status(500).send({
-					message:
-						err.message || "Error occurred while validating nonce."
-				});
+				errorResponse(req, res, 500, err.message || "Error occurred while validating nonce.");
 				return;
 			}
 			if(data) {
 				const old_nonce = data.nonce;
 				if(parseFloat(nonce) <= parseFloat(old_nonce)) {
-					res.status(403).send({
-						message: "Invalid nonce."
-					});
+					errorResponse(req, res, 403, "Invalid nonce.");
 					return;
 				}
 			}
@@ -171,24 +130,18 @@ exports.upload = async (req, res) => {
 		// see if token still accepted
 		const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
 		if(!paymentToken) {
-			res.status(400).send({
-				message: "Payment token no longer accepted."
-			});
+			errorResponse(req, res, 400, "Payment token no longer accepted.");
 			return;
 		}
 
 		// check status of quote
 		if(quote.status != Quote.QUOTE_STATUS_WAITING) {
 			if(quote.status == Quote.QUOTE_STATUS_UPLOAD_END) {
-				res.status(400).send({
-					message: "Quote has been completed."
-				});
+				errorResponse(req, res, 400, "Quote has been completed.");
 				return;
 			}
 			else {
-				res.status(400).send({
-					message: "Quote is being processed."
-				});
+				errorResponse(req, res, 400, "Quote is being processed.");
 				return;
 			}
 		}
@@ -199,9 +152,7 @@ exports.upload = async (req, res) => {
 			bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 		}
 		catch(err) {
-			res.status(500).send({
-				message: err.message
-			});
+			errorResponse(req, res, 500, err.message);
 			return;
 		}
 
@@ -212,18 +163,14 @@ exports.upload = async (req, res) => {
 			priceWei = ethers.BigNumber.from(bundlrPriceWei.toString());
 		}
 		catch(err) {
-			res.status(500).send({
-				message: err.message
-			});
+			errorResponse(req, res, 500, err.message);
 			return;
 		}
 
 		const quoteTokenAmount = ethers.BigNumber.from(quote.tokenAmount);
 
 		if(priceWei.gte(quoteTokenAmount)) {
-			res.status(402).send({
-				message: `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`
-			});
+			errorResponse(req, res, 402, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
 			return;
 		}
 
@@ -260,6 +207,22 @@ exports.upload = async (req, res) => {
 		const token = new ethers.Contract(tokenAddress, abi, wallet);
 		console.log(`payment token address = ${token.address}`);
 
+		// Check allowance
+		const allowance = await token.allowance(userAddress, wallet.address);
+		console.log(`allowance = ${allowance}`);
+		if(allowance.lt(priceWei)) {
+			errorResponse(req, res, 400, `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`);
+			return;
+		}
+
+		// Check that user has sufficient funds
+		const userBalance = await token.balanceOf(userAddress);
+		console.log(`userBalance = ${userBalance}`);
+		if(userBalance.lt(priceWei)) {
+			errorResponse(req, res, 400, `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`);
+			return;
+		}
+
 		// Estimate cost of:
 		// 1. Pull ERC-20 token from userAddress
 		const transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
@@ -294,38 +257,11 @@ exports.upload = async (req, res) => {
 		const feeTokenBalance = await wallet.getBalance();
 		console.log(`feeTokenBalance = ${feeTokenBalance}`);
 		if(feeEstimate.gte(feeTokenBalance)) {
-			const message = `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`;
-			console.log(message);
-			res.status(503).send({
-				message: message
-			});
+			errorResponse(req, res, 503, `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`);
 			return;
 		}
 
-		// Check allowance
-		const allowance = await token.allowance(userAddress, wallet.address);
-		console.log(`allowance = ${allowance}`);
-		if(allowance.lt(priceWei)) {
-			const message = `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`;
-			console.log(message);
-			res.status(400).send({
-				message: message
-			});
-			return;
-		}
-
-		// Check that user has sufficient funds
-		const userBalance = await token.balanceOf(userAddress);
-		console.log(`userBalance = ${userBalance}`);
-		if(userBalance.lt(priceWei)) {
-			const message = `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`;
-			console.log(message);
-			res.status(400).send({
-				message: message
-			});
-			return;
-		}
-
+		console.log(`${req.path} response: 200`);
 		res.send(null); // send 200
 
 		// change status
@@ -372,9 +308,7 @@ exports.upload = async (req, res) => {
 			} */
 		}
 		catch(err) {
-			// can't fund the quote
-			console.log("Can't fund the quote.")
-			console.log(err.message);
+			errorResponse(req, res, 500, "Can't fund the quote.");
 			return;
 		}
 
@@ -383,7 +317,7 @@ exports.upload = async (req, res) => {
 
 		let files_uploaded = 0;
 		await Promise.all(files.map(async (file, index) => {
-			await Upload.get(quoteId, index, async (err, quotedFile) => {
+			await File.get(quoteId, index, async (err, quotedFile) => {
 				if(err) {
 					console.log(err);
 					return;
@@ -428,7 +362,7 @@ exports.upload = async (req, res) => {
 						});
 						uploader.on("done", async (finishRes) => {
 							const transactionId = finishRes.data.id;
-							Upload.setHash(quoteId, index, transactionId);
+							File.setHash(quoteId, index, transactionId);
 
 							// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
 							try {

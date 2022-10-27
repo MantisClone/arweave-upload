@@ -4,6 +4,7 @@ const axios = require("axios");
 const ethers = require('ethers');
 const { getAcceptedPaymentDetails } = require("./app/controllers/tokens.js");
 const { checkConfig } = require("./app/controllers/config.js");
+const { errorResponse } = require("./app/controllers/error.js");
 
 const app = express();
 app.disable('x-powered-by');
@@ -20,10 +21,7 @@ app.use(function(req, res, next) {
 app.use(bodyParser.json());
 app.use(function(error, req, res, next) {
 	// catch json error
-	console.log("JSON ERROR");
-	res.status(400).send({
-		message: "Invalid JSON"
-	});
+	errorResponse(req, res, 400, "Invalid JSON");
 });
 
 // parse requests of content-type - application/x-www-form-urlencoded
