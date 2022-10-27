@@ -10,7 +10,7 @@ const { errorResponse } = require("./error.js");
 const quoteidRegex = /^[a-fA-F0-9]{32}$/;
 
 exports.create = async (req, res) => {
-	console.log(`getQuote request: ${JSON.stringify(req.body)}`)
+	console.log(`getQuote request: ${JSON.stringify(req.body, null, 4)}`)
 
 	// Validate request
 	if(!req.body) {
@@ -201,7 +201,7 @@ exports.create = async (req, res) => {
 };
 
 exports.getStatus = async (req, res) => {
-	console.log(`getStatus request: ${JSON.stringify(req.query)}`)
+	console.log(`getStatus request: ${JSON.stringify(req.query, null, 4)}`)
 
 	if(!req.query || !req.query.quoteId) {
 		errorResponse(req, res, 400, "Error, quoteId required.");
@@ -239,7 +239,7 @@ exports.setStatus = async (quoteId, status) => {
 };
 
 exports.getLink = async (req, res) => {
-	console.log(`getLink request: ${JSON.stringify(req.query)}`)
+	console.log(`getLink request: ${JSON.stringify(req.query, null, 4)}`)
 
 	if(!req.query || !req.query.quoteId) {
 		errorResponse(req, res, 400, "Error, quoteId required.");

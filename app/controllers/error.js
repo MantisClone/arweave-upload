@@ -1,6 +1,7 @@
 errorResponse = (req, res, statusCode, message) => {
-    console.error(`${req.path} response: ${statusCode}: ${message}`);
-    res.status(statusCode).send({message: message});
+    const error = { message: message };
+    console.error(`${req.path} response: ${statusCode}: ${JSON.stringify(error, null, 4)}`);
+    res.status(statusCode).send(error);
 }
 
 module.exports = { errorResponse };
