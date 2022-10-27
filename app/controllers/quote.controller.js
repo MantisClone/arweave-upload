@@ -169,7 +169,7 @@ exports.create = async (req, res) => {
 
 	// convert bignumber.js BigNumber to ethers.BigNumber
 	let ethersPriceWei;
-	const strPriceWei = priceWei.toString();
+	const strPriceWei = priceWei.toString(10);
 	console.log(`strPriceWei = ${strPriceWei}`);
 	console.log(`ethersPriceWei = ${ethers.BigNumber.from(strPriceWei)}`);
 	if(!strPriceWei.match(/^\d+$/)) {
