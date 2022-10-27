@@ -34,7 +34,7 @@ describe("DBS Arweave Upload", function () {
         describe("without approval", function () {
 
             it("should fail to pull funds from user account", async function() {
-                this.timeout(20000);
+                this.timeout(20 * 1000);
 
                 const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
@@ -57,7 +57,7 @@ describe("DBS Arweave Upload", function () {
         })
 
         describe("with approval", function () {
-            this.timeout(60000);
+            this.timeout(120 * 1000);
 
             const abi = [
                 'function approve(address, uint256) external returns (bool)',
@@ -89,7 +89,7 @@ describe("DBS Arweave Upload", function () {
 
 
                 let status
-                for(let i = 0; i < 60; i++) {
+                for(let i = 0; i < 120; i++) {
                     let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
                     expect(getStatusResponse).to.exist;
                     expect(getStatusResponse.status).to.equal(200);
