@@ -57,7 +57,8 @@ describe("DBS Arweave Upload", function () {
         })
 
         describe("with approval", function () {
-            this.timeout(120 * 1000);
+            const timeoutSeconds = 120;
+            this.timeout(timeoutSeconds * 1000);
 
             const abi = [
                 'function approve(address, uint256) external returns (bool)',
@@ -89,7 +90,7 @@ describe("DBS Arweave Upload", function () {
 
 
                 let status
-                for(let i = 0; i < 120; i++) {
+                for(let i = 0; i < timeoutSeconds; i++) {
                     let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
                     expect(getStatusResponse).to.exist;
                     expect(getStatusResponse.status).to.equal(200);
