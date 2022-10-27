@@ -10,7 +10,7 @@ const { errorResponse } = require("./error.js");
 const quoteidRegex = /^[a-fA-F0-9]{32}$/;
 
 exports.create = async (req, res) => {
-	console.log(`getQuote request: ${JSON.stringify(req.body, null, 4)}`)
+	console.log(`getQuote request: ${JSON.stringify(req.body)}`)
 
 	// Validate request
 	if(!req.body) {
@@ -194,14 +194,14 @@ exports.create = async (req, res) => {
 		}
 		else {
 			// send receipt for data
-			console.log(`${req.path} response: 200: ${JSON.stringify(data, null, 4)}`);
+			console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
 			res.send(data);
 		}
 	});
 };
 
 exports.getStatus = async (req, res) => {
-	console.log(`getStatus request: ${JSON.stringify(req.query, null, 4)}`)
+	console.log(`getStatus request: ${JSON.stringify(req.query)}`)
 
 	if(!req.query || !req.query.quoteId) {
 		errorResponse(req, res, 400, "Error, quoteId required.");
@@ -224,7 +224,7 @@ exports.getStatus = async (req, res) => {
 		}
 		else {
 			// send receipt for data
-			console.log(`${req.path} response: 200: ${JSON.stringify(data, null, 4)}`);
+			console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
 			res.send(data);
 		}
 	});
@@ -239,7 +239,7 @@ exports.setStatus = async (quoteId, status) => {
 };
 
 exports.getLink = async (req, res) => {
-	console.log(`getLink request: ${JSON.stringify(req.query, null, 4)}`)
+	console.log(`getLink request: ${JSON.stringify(req.query)}`)
 
 	if(!req.query || !req.query.quoteId) {
 		errorResponse(req, res, 400, "Error, quoteId required.");
@@ -322,7 +322,7 @@ exports.getLink = async (req, res) => {
 					return;
 				}
 				// send receipt for data
-				console.log(`${req.path} response: 200: ${JSON.stringify(data, null, 4)}`);
+				console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
 				res.send(data);
 			});
 		});

@@ -10,7 +10,7 @@ const { QUOTE_STATUS_PAYMENT_FAILED } = require("../models/quote.model.js");
 const { errorResponse } = require("./error.js");
 
 exports.upload = async (req, res) => {
-	console.log(`upload request: ${JSON.stringify(req.body, null, 4)}`)
+	console.log(`upload request: ${JSON.stringify(req.body)}`)
 
 	// Validate request
 	if(!req.body) {
