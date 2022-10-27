@@ -27,6 +27,19 @@ describe("DBS Arweave Upload", function () {
                 "approveAddress"
             );
         });
+
+        it("should respond 200 when request is valid, even when file is 1 TB", async function () {
+            const TB = 1_000_000_000_000;
+            const res = await getQuote(wallet, TB).catch((err) => err.response);
+            expect(res.status).equals(200);
+            expect(res.data).contains.all.keys(
+                "quoteId",
+                "chainId",
+                "tokenAddress",
+                "tokenAmount",
+                "approveAddress"
+            );
+        });
     });
 
     describe("Integration tests", function () {
