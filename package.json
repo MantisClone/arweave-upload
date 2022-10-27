@@ -5,7 +5,7 @@
 	"main": "server.js",
 	"scripts": {
 		"start": "node server.js",
-		"test": "mocha -g 'should successfully pull funds from user account'"
+		"test": "mocha"
 	},
 	"keywords": [
 		"arweave",

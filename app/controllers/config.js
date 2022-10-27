@@ -1,4 +1,3 @@
-const tokens = require("./tokens.js");
 const { URL } = require('url');
 
 const checkConfig = () => {
