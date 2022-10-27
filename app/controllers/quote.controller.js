@@ -225,6 +225,7 @@ exports.create = async (req, res) => {
 	// convert bignumber.js BigNumber to ethers.BigNumber
 	let ethersPriceWei;
 	const strPriceWei = priceWei.toString();
+	console.log(`strPriceWei = ${STRpRICEwEI}`);
 	if(!strPriceWei.match(/^\d+$/)) {
 		BigNumber.config({ EXPONENTIAL_AT: 1e+9 });
 		const big = new BigNumber(0).plus(priceWei);
