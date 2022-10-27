@@ -213,7 +213,7 @@ exports.create = async (req, res) => {
 	let priceWei;
 	try {
 		priceWei = await bundlr.getPrice(totalLength);
-		priceWei = ethers.BigNumber.from(priceWei.toString()); // need to convert so we can add buffer
+		priceWei = ethers.BigNumber.from(priceWei.toString(10)); // need to convert so we can add buffer
 	}
 	catch(err) {
 		res.status(500).send({
