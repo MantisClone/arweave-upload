@@ -212,28 +212,27 @@ exports.getStatus = async (req, res) => {
 		return;
 	}
 
-	await Quote.getStatus(quoteId, (err, data) => {
-		if(err) {
-			if(err.code == 404) {
-				errorResponse(req, res, 404, err.message);
-				return;
-			}
-			errorResponse(req, res, 500, err.message || "Error occurred while looking up status.");
+	try {
+		const status = Quote.getStatus(quoteId);
+		if(status == undefined) {
+			errorResponse(req, res, 404, err.message);
+			return;
 		}
-		else {
-			// send receipt for data
-			console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
-			res.send(data);
-		}
-	});
+		console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
+		res.send(status);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Error occurred while looking up status.");
+	}
 };
 
 exports.setStatus = async (quoteId, status) => {
-	await Quote.setStatus(quoteId, status, (err, data) => {
-		if(err) {
-			console.log(err);
-		}
-	});
+	try {
+		Quote.setStatus(quoteId, status);
+	}
+	catch(err) {
+		console.error(err);
+	}
 };
 
 exports.getLink = async (req, res) => {
