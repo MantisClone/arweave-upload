@@ -39,7 +39,7 @@ const create_nonce = `
 
 let db;
 try {
-	db = new sqlite(path.resolve(db_file), {fileMustExist: true});
+	db = new sqlite(path.resolve(db_file));
 }
 catch(err) {
 	console.log(err);
