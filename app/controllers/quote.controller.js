@@ -44,6 +44,7 @@ exports.create = async (req, res) => {
 	}
 	if(!ethers.utils.isAddress(userAddress)) {
 		errorResponse(req, res, 400, "Invalid userAddress.");
+		return;
 	}
 
 	let files = req.body.files;
