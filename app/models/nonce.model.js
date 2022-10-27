@@ -6,7 +6,7 @@ const Nonce = function(nonce) {
 	this.nonce = nonce.nonce;
 };
 
-Nonce.get = (userAddress, result) => {
+Nonce.get = async (userAddress, result) => {
 	const query = `
 		SELECT *
 		FROM nonce
