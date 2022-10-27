@@ -194,7 +194,7 @@ exports.create = async (req, res) => {
 		}
 		else {
 			// send receipt for data
-			console.log(`${req.path} response: 200: ${data.toString()}`);
+			console.log(`${req.path} response: 200: ${JSON.stringify(data, null, 4)}`);
 			res.send(data);
 		}
 	});
@@ -224,7 +224,7 @@ exports.getStatus = async (req, res) => {
 		}
 		else {
 			// send receipt for data
-			console.log(`${req.path} response: 200: ${data.toString()}`);
+			console.log(`${req.path} response: 200: ${JSON.stringify(data, null, 4)}`);
 			res.send(data);
 		}
 	});
@@ -322,7 +322,7 @@ exports.getLink = async (req, res) => {
 					return;
 				}
 				// send receipt for data
-				console.log(`${req.path} response: 200: ${data.toString()}`);
+				console.log(`${req.path} response: 200: ${JSON.stringify(data, null, 4)}`);
 				res.send(data);
 			});
 		});
