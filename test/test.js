@@ -68,7 +68,7 @@ describe("DBS Arweave Upload", function () {
                 expect(getStatusResponse.data.status).equals(1);
             });
 
-            it("should respond 400 when nonce is old", async function() {
+            it("should respond 403 when nonce is old", async function() {
                 this.timeout(20 * 1000);
 
                 const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
