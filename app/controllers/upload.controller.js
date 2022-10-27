@@ -120,10 +120,11 @@ exports.upload = async (req, res) => {
 			}
 			if(data) {
 				old_nonce = data.nonce
+				console.log(`inner scope = ${old_nonce}`);
 			}
 		});
 
-		console.log(old_nonce);
+		console.log(`outer scope = ${old_nonce}`);
 		if(parseFloat(nonce) <= parseFloat(old_nonce)) {
 			errorResponse(req, res, 403, "Invalid nonce.");
 			return;
