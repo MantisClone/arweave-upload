@@ -1,7 +1,6 @@
 const Bundlr = require("@bundlr-network/client");
 const crypto = require("crypto");
 const ethers = require('ethers');
-const BigNumber = require("bignumber.js");
 
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
@@ -214,6 +213,7 @@ exports.create = async (req, res) => {
 	let priceWei;
 	try {
 		priceWei = await bundlr.getPrice(totalLength);
+		priceWei = ethers.BigNumber.from(priceWei.toString()); // need to convert so we can add buffer
 	}
 	catch(err) {
 		res.status(500).send({
@@ -221,21 +221,7 @@ exports.create = async (req, res) => {
 		});
 		return;
 	}
-
-	// convert bignumber.js BigNumber to ethers.BigNumber
-	let ethersPriceWei;
-	const strPriceWei = priceWei.toString();
-	if(!strPriceWei.match(/^\d+$/)) {
-		BigNumber.config({ EXPONENTIAL_AT: 1e+9 });
-		const big = new BigNumber(0).plus(priceWei);
-		ethersPriceWei = ethers.BigNumber.from(big.toString());
-	}
-	else {
-		ethersPriceWei = ethers.BigNumber.from(strPriceWei);
-	}
-
-	// add 10% buffer since prices fluctuate
-	const tokenAmount = ethersPriceWei.add(ethersPriceWei.div(10));
+	const tokenAmount = priceWei.add(priceWei.div(10)); // add 10% buffer since prices fluctuate
 
 	// TODO: generate this better
 	const quoteId = crypto.randomBytes(16).toString("hex");
