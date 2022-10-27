@@ -9,36 +9,23 @@ const File = function(file) {
 	this.transactionHash = file.transactionHash;
 };
 
-File.get = async (quoteId, index, result) => {
+File.get = (quoteId, index) => {
 	const query = `
 		SELECT *
 		FROM files
 		WHERE "quoteId" = ?
 		AND "index" = ?;
 	`;
-
-	sql.get(query, [quoteId, index], (err, res) => {
-		if(err) {
-			console.log("error:", err);
-			result(err, null);
-			return;
-		}
-		result(null, res);
-	});
+	return sql.prepare(query).get([quoteId, index]);
 }
 
-File.setHash = async (quoteId, index, transactionHash) => {
+File.setHash = (quoteId, index, transactionHash) => {
 	const query = `
 		UPDATE files SET transactionHash = ?
 		WHERE "quoteId" = ?
 		AND "index" = ?;
 	`;
-
-	sql.run(query, [transactionHash, quoteId, index], (err, res) => {
-		if(err) {
-			console.log("error:", err);
-		}
-	});
+	return sql.prepare(query).run([transactionHash, quoteId, index]);
 }
 
 module.exports = File;

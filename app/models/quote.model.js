@@ -22,7 +22,7 @@ Quote.QUOTE_STATUS_UPLOAD_START = 4;
 Quote.QUOTE_STATUS_UPLOAD_END = 5;
 Quote.QUOTE_STATUS_PAYMENT_FAILED = 6;
 
-Quote.create = async (newQuote, result) => {
+Quote.create = (newQuote) => {
 	const params = [
 		newQuote.quoteId,
 		newQuote.status,
@@ -35,130 +35,66 @@ Quote.create = async (newQuote, result) => {
 	];
 
 	const quote_sql = 'INSERT INTO quote (quoteId, status, created, chainId, tokenAddress, userAddress, tokenAmount, approveAddress) VALUES (?, ?, ?, ?, ?, ?, ?, ?);'
-	sql.run(quote_sql, params, (err, res) => {
-		if(err) {
-			console.log("error:", err);
-			result(err, null);
-			return;
-		}
+	
+	sql.prepare(quote_sql).run(params)
 
-		// generate files sql
-		const placeholders = newQuote.files.map(() => "(?, ?, ?)").join(', ');
-		const files_sql = 'INSERT INTO files ("quoteId", "index", "length") VALUES ' + placeholders;
+	// generate files sql
+	const placeholders = newQuote.files.map(() => "(?, ?, ?)").join(', ');
+	const files_sql = 'INSERT INTO files ("quoteId", "index", "length") VALUES ' + placeholders;
 
-		let files_params = [];
-		newQuote.files.forEach((length, index) => {
-			const arr = [newQuote.quoteId, index, length];
-			files_params = [...files_params, ...arr];
-		});
-
-		sql.run(files_sql, files_params, (err, res) => {
-			if(err) {
-				console.log("error:", err);
-				result(err, null);
-				return;
-			}
-			// remove from output
-			delete newQuote.status;
-			delete newQuote.created;
-			delete newQuote.userAddress;
-			delete newQuote.files;
-
-			result(null, newQuote);
-		});
+	let files_params = [];
+	newQuote.files.forEach((length, index) => {
+		const arr = [newQuote.quoteId, index, length];
+		files_params = [...files_params, ...arr];
 	});
-};
 
-Quote.get = async (quoteId, result) => {
-	const quote_sql = `
+	sql.prepare(files_sql).run(files_params);
+
+	delete newQuote.status;
+	delete newQuote.created;
+	delete newQuote.userAddress;
+	delete newQuote.files;
+
+	return newQuote;
+}
+
+
+Quote.get = (quoteId) => {
+	const query = `
 		SELECT *, (SELECT SUM(length) FROM files WHERE quoteId = ?) AS 'size'
 		FROM quote
 		WHERE quoteId = ?;
 	`;
-
-	sql.get(quote_sql, [quoteId, quoteId], (err, res) => {
-		if(err) {
-			console.log("error:", err);
-			result(err, null);
-			return;
-		}
-
-		if(!res) {
-			result({"code": 404, "message": "Quote not found"}, null);
-			return;
-		}
-
-		result(null, res);
-	});
-}
-
-Quote.getStatus = async (quoteId, result) => {
-	const status_sql = "SELECT status FROM quote WHERE quoteId = ?;";
-
-	sql.get(status_sql, [quoteId], (err, res) => {
-		if(err) {
-			console.log("error:", err);
-			result(err, null);
-			return;
-		}
-
-		if(!res) {
-			result({"code": 404, "message": "Quote not found"}, null);
-			return;
-		}
-
-		result(null, res);
-	});
-}
-
-Quote.setStatus = async (quoteId, status) => {
-	const quote_sql = 'UPDATE quote SET status = ? WHERE quoteId = ?;'
-	sql.run(quote_sql, [status, quoteId], (err, res) => {
-		if(err) {
-			console.log("error:", err);
-			return;
-		}
-	});
+	return sql.prepare(query).get([quoteId, quoteId]);
 };
 
-Quote.getLink = async (quoteId, result) => {
+Quote.getStatus = (quoteId) => {
+	const query = "SELECT status FROM quote WHERE quoteId = ?;";
+	return sql.prepare(query).get([quoteId]);
+};
+
+Quote.setStatus = (quoteId, status) => {
+	const query = 'UPDATE quote SET status = ? WHERE quoteId = ?;'
+	sql.prepare(query).run([status, quoteId]);
+};
+
+Quote.getLink = (quoteId) => {
 	// check status
-	Quote.getStatus(quoteId, (err, data) => {
-		if(err) {
-			if(err.code == 404) {
-				console.log(`Can't find quote ${quoteID}`);
-				result({"code": 404, "message": "Quote not found"}, null);
-				return;
-			}
-			console.log("error:", err);
-			result(err, null);
-			return;
-		}
-		if(data.status != Quote.QUOTE_STATUS_UPLOAD_END) {
-			result({"code": 404, "message": "Upload not completed yet."}, null);
-			return;
-		}
+	const status = Quote.getStatus(quoteId);
+	if(status == undefined) {
+		throw new Error("Quote not found");
+	}
 
-		const query = `SELECT "arweave" AS "type", transactionHash
-			FROM files
-			WHERE quoteId = ?
-			ORDER BY "index" ASC;`;
+	if(status != Quote.QUOTE_STATUS_UPLOAD_END) {
+		throw new Error("Upload not completed yet.");
+	}
 
-		sql.all(query, [quoteId], (err, rows) => {
-			if(err) {
-				console.log("error:", err);
-				result(err, null);
-				return;
-			}
+	const query = `SELECT "arweave" AS "type", transactionHash
+		FROM files
+		WHERE quoteId = ?
+		ORDER BY "index" ASC;`;
 
-			if(!rows) {
-				result({"code": 404, "message": "No transaction hashes found"}, null);
-				return;
-			}
-
-			result(null, rows);
-		});
-	});
+	return sql.prepare(query).all([quoteId]);
 };
 
 module.exports = Quote;

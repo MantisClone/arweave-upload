@@ -188,17 +188,14 @@ exports.create = async (req, res) => {
 	});
 
 	// Save Reading in the database
-	await Quote.create(quote, (err, data) => {
-		if(err) {
-			errorResponse(req, res, 500, err.message || "Error occurred while creating the quote.");
-			return;
-		}
-		else {
-			// send receipt for data
-			console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
-			res.send(data);
-		}
-	});
+	try {
+		const data = Quote.create(quote);
+		console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
+		res.send(data);
+	}
+	catch(err) {
+		errorResponse(req, res, 400, "Error occurred while creating the quote.");
+	}
 };
 
 exports.getStatus = async (req, res) => {
@@ -313,6 +310,7 @@ exports.getLink = async (req, res) => {
 			}
 			Nonce.set(userAddress, nonce);
 
+			// TDO: check if none links found, and give 404: No transaction hashes found
 			await Quote.getLink(quoteId, (err, data) => {
 				if(err) {
 					if(err.code == 404) {
