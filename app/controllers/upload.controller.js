@@ -287,15 +287,21 @@ exports.upload = async (req, res) => {
 	catch(err) {
 		console.log(err);
 		try {
-			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED);
 		}
 		catch(err) {
-			console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_FAILED}`);
+			console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED}`);
 		}
 		return;
 	}
 
-	// TODO: Set status
+	try {
+		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS);
+	}
+	catch(err) {
+		console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS}`);
+		return;
+	}
 
 	// If payment is wrapped, unwrap it (ex. WETH -> ETH)
 	if(tokenDetails.wrappedAddress) {
