@@ -6,31 +6,18 @@ const Nonce = function(nonce) {
 	this.nonce = nonce.nonce;
 };
 
-Nonce.get = async (userAddress, result) => {
+Nonce.get = (userAddress) => {
 	const query = `
 		SELECT *
 		FROM nonce
 		WHERE userAddress = ?;
 	`;
-
-	sql.get(query, [userAddress], (err, res) => {
-		if(err) {
-			console.log("error:", err);
-			result(err, null);
-			return;
-		}
-		result(null, res);
-	});
+	return sql.prepare(query).get([userAddress]);
 }
 
 Nonce.set = (userAddress, nonce) => {
-	const query = 'INSERT OR REPLACE INTO nonce (userAddress, nonce) VALUES (?, ?);';
-	sql.run(query, [userAddress, nonce], (err, res) => {
-		if(err) {
-			console.log("error:", err);
-			return;
-		}
-	});
+	const query = "INSERT OR REPLACE INTO nonce (userAddress, nonce) VALUES (?, ?);";
+	sql.prepare(query).run([userAddress, nonce]);
 };
 
 module.exports = Nonce;

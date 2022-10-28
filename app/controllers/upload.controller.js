@@ -86,325 +86,364 @@ exports.upload = async (req, res) => {
 	}
 
 	// validate quote
-	await Quote.get(quoteId, async (err, quote) => {
-		if(err) {
-			if(err.code == 404) {
-				errorResponse(req, res, 404, err.message);
-				return;
-			}
-			errorResponse(req, res, 500, err.message || "Error occurred while validating quote.");
-			return;
+	let quote;
+	try {
+		quote = Quote.get(quoteId);
+		if(quote == undefined) {
+			errorResponse(req, res, 404, "Quote not found.");
+			return;			
 		}
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Error occurred while validating quote.");
+		return;	
+	}
 
-		const userAddress = quote.userAddress;
-		const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quoteId + nonce.toString()));
-		let signerAddress;
-		try {
-			signerAddress = ethers.utils.verifyMessage(message, signature);
-		}
-		catch(err) {
-			errorResponse(req, res, 403, "Invalid signature.");
-			return;
-		}
+	const userAddress = quote.userAddress;
+	const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quoteId + nonce.toString()));
+	let signerAddress;
+	try {
+		signerAddress = ethers.utils.verifyMessage(message, signature);
+	}
+	catch(err) {
+		errorResponse(req, res, 403, "Invalid signature.");
+		return;
+	}
 
-		if(signerAddress != userAddress) {
-			errorResponse(req, res, 403, "Invalid signature.");
-			return;
-		}
+	if(signerAddress != userAddress) {
+		errorResponse(req, res, 403, "Invalid signature.");
+		return;
+	}
 
-		let old_nonce;
-		await Nonce.get(userAddress, async (err, data) => {
-			if(err) {
-				errorResponse(req, res, 500, err.message || "Error occurred while validating nonce.");
-				return;
-			}
-			if(data) {
-				old_nonce = data.nonce
-				console.log(`inner scope = ${old_nonce}`);
-			}
-		});
+	let old_nonce;
+	try {
+		old_nonce = Nonce.get(userAddress);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Error occurred while validating nonce.");
+		return;
+	}
 
-		console.log(`outer scope = ${old_nonce}`);
-		if(parseFloat(nonce) <= parseFloat(old_nonce)) {
-			errorResponse(req, res, 403, "Invalid nonce.");
-			return;
-		}
+	if(parseFloat(nonce) <= parseFloat(old_nonce)) {
+		errorResponse(req, res, 403, "Invalid nonce.");
+		return;
+	}
+	try {
 		Nonce.set(userAddress, nonce);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Error occurred while storing nonce.");
+		return;
+	}
 
+	// see if token still accepted
+	const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
+	if(!paymentToken) {
+		errorResponse(req, res, 400, "Payment token no longer accepted.");
+		return;
+	}
 
-		// see if token still accepted
-		const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
-		if(!paymentToken) {
-			errorResponse(req, res, 400, "Payment token no longer accepted.");
+	// check status of quote
+	if(quote.status != Quote.QUOTE_STATUS_WAITING) {
+		if(quote.status == Quote.QUOTE_STATUS_UPLOAD_END) {
+			errorResponse(req, res, 400, "Quote has been completed.");
 			return;
-		}
-
-		// check status of quote
-		if(quote.status != Quote.QUOTE_STATUS_WAITING) {
-			if(quote.status == Quote.QUOTE_STATUS_UPLOAD_END) {
-				errorResponse(req, res, 400, "Quote has been completed.");
-				return;
-			}
-			else {
-				errorResponse(req, res, 400, "Quote is being processed.");
-				return;
-			}
-		}
-
-		// check if new price is sufficient
-		let bundlr;
-		try {
-			bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
-		}
-		catch(err) {
-			errorResponse(req, res, 500, err.message);
-			return;
-		}
-
-		let bundlrPriceWei;
-		let priceWei;
-		try {
-			bundlrPriceWei = await bundlr.getPrice(quote.size)
-			priceWei = ethers.BigNumber.from(bundlrPriceWei.toString());
-		}
-		catch(err) {
-			errorResponse(req, res, 500, err.message);
-			return;
-		}
-
-		const quoteTokenAmount = ethers.BigNumber.from(quote.tokenAmount);
-
-		if(priceWei.gte(quoteTokenAmount)) {
-			errorResponse(req, res, 402, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
-			return;
-		}
-
-		// Create provider
-		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
-		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
-		const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
-		let provider;
-		if(jsonRpcUri === "default") {
-			const defaultProviderUrl = tokenDetails.providerUrl;
-			console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
-			provider = ethers.getDefaultProvider(defaultProviderUrl);
 		}
 		else {
-			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
-			provider = ethers.getDefaultProvider(jsonRpcUri);
-		}
-		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
-
-		// Create wallet
-		const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-
-		// Create payment token contract handle
-		const abi = [
-			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
-			'function allowance(address owner, address spender) external view returns (uint256)',
-			'function balanceOf(address owner) external view returns (uint256)',
-			'function deposit(uint256 value) external',
-			'function withdraw(uint256 value) external',
-			'function transfer(address to, uint256 value) external returns (bool)'
-		];
-		const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
-		const token = new ethers.Contract(tokenAddress, abi, wallet);
-		console.log(`payment token address = ${token.address}`);
-
-		// Check allowance
-		const allowance = await token.allowance(userAddress, wallet.address);
-		console.log(`allowance = ${allowance}`);
-		if(allowance.lt(priceWei)) {
-			errorResponse(req, res, 400, `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`);
+			errorResponse(req, res, 400, "Quote is being processed.");
 			return;
 		}
+	}
 
-		// Check that user has sufficient funds
-		const userBalance = await token.balanceOf(userAddress);
-		console.log(`userBalance = ${userBalance}`);
-		if(userBalance.lt(priceWei)) {
-			errorResponse(req, res, 400, `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`);
-			return;
-		}
+	// check if new price is sufficient
+	let bundlr;
+	try {
+		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+	}
+	catch(err) {
+		errorResponse(req, res, 500, err.message);
+		return;
+	}
 
-		// Estimate cost of:
-		// 1. Pull ERC-20 token from userAddress
-		const transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
-		// 2. Unwrap if necessary
-		const unwrapEstimate = await token.estimateGas.withdraw(priceWei);
-		// 3. Push funds to Bundlr account
-		// TODO: Don't hardcode Bundlr Address. Or maybe it's fine.
-		const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
-		const sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei});
-		// 4. Possibly refund in case of non-recoverable failure
-		const wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
-		const transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
+	let bundlrPriceWei;
+	let priceWei;
+	try {
+		bundlrPriceWei = await bundlr.getPrice(quote.size)
+		priceWei = ethers.BigNumber.from(bundlrPriceWei.toString(10));
+	}
+	catch(err) {
+		errorResponse(req, res, 500, err.message);
+		return;
+	}
 
-		console.log(`transferFromEstimate = ${transferFromEstimate}`);
-		console.log(`unwrapEstimate = ${unwrapEstimate}`);
-		console.log(`sendEthEstimate = ${sendEthEstimate}`);
-		console.log(`wrapEstimate = ${wrapEstimate}`);
-		console.log(`transferEstimate = ${transferEstimate}`);
+	const quoteTokenAmount = ethers.BigNumber.from(quote.tokenAmount);
 
-		let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
-		if(tokenDetails.wrappedAddress) {
-			gasEstimate = gasEstimate.add(unwrapEstimate).add(wrapEstimate);
-		}
-		console.log(`gasEstimate = ${gasEstimate}`);
+	if(priceWei.gte(quoteTokenAmount)) {
+		errorResponse(req, res, 402, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
+		return;
+	}
 
-		const feeData = await provider.getFeeData();
-		// Assume all payment chains support EIP-1559 transactions.
-		const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
-		console.log(`feeEstimate = ${feeEstimate}`);
+	// Create provider
+	const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+	const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
+	const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
+	const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
+	let provider;
+	if(jsonRpcUri === "default") {
+		const defaultProviderUrl = tokenDetails.providerUrl;
+		console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
+		provider = ethers.getDefaultProvider(defaultProviderUrl);
+	}
+	else {
+		console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
+		provider = ethers.getDefaultProvider(jsonRpcUri);
+	}
+	console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 
-		// Check server fee token balance
-		const feeTokenBalance = await wallet.getBalance();
-		console.log(`feeTokenBalance = ${feeTokenBalance}`);
-		if(feeEstimate.gte(feeTokenBalance)) {
-			errorResponse(req, res, 503, `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`);
-			return;
-		}
+	// Create wallet
+	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-		console.log(`${req.path} response: 200`);
-		res.send(null); // send 200
+	// Create payment token contract handle
+	const abi = [
+		'function transferFrom(address from, address to, uint256 value) external returns (bool)',
+		'function allowance(address owner, address spender) external view returns (uint256)',
+		'function balanceOf(address owner) external view returns (uint256)',
+		'function deposit(uint256 value) external',
+		'function withdraw(uint256 value) external',
+		'function transfer(address to, uint256 value) external returns (bool)'
+	];
+	const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
+	const token = new ethers.Contract(tokenAddress, abi, wallet);
+	console.log(`payment token address = ${token.address}`);
 
-		// change status
-		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
+	// Check allowance
+	const allowance = await token.allowance(userAddress, wallet.address);
+	console.log(`allowance = ${allowance}`);
+	if(allowance.lt(priceWei)) {
+		errorResponse(req, res, 400, `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`);
+		return;
+	}
 
-		// Pull payment from user's account using transferFrom(userAddress, amount)
-		const confirms = tokenDetails.confirms;
+	// Check that user has sufficient funds
+	const userBalance = await token.balanceOf(userAddress);
+	console.log(`userBalance = ${userBalance}`);
+	if(userBalance.lt(priceWei)) {
+		errorResponse(req, res, 400, `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`);
+		return;
+	}
+
+	// Estimate cost of:
+	// 1. Pull ERC-20 token from userAddress
+	const transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
+	// 2. Unwrap if necessary
+	const unwrapEstimate = await token.estimateGas.withdraw(priceWei);
+	// 3. Push funds to Bundlr account
+	// TODO: Don't hardcode Bundlr Address. Or maybe it's fine.
+	const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
+	const sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei});
+	// 4. Possibly refund in case of non-recoverable failure
+	const wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
+	const transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
+
+	console.log(`transferFromEstimate = ${transferFromEstimate}`);
+	console.log(`unwrapEstimate = ${unwrapEstimate}`);
+	console.log(`sendEthEstimate = ${sendEthEstimate}`);
+	console.log(`wrapEstimate = ${wrapEstimate}`);
+	console.log(`transferEstimate = ${transferEstimate}`);
+
+	let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
+	if(tokenDetails.wrappedAddress) {
+		gasEstimate = gasEstimate.add(unwrapEstimate).add(wrapEstimate);
+	}
+	console.log(`gasEstimate = ${gasEstimate}`);
+
+	const feeData = await provider.getFeeData();
+	// Assume all payment chains support EIP-1559 transactions.
+	const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
+	console.log(`feeEstimate = ${feeEstimate}`);
+
+	// Check server fee token balance
+	const feeTokenBalance = await wallet.getBalance();
+	console.log(`feeTokenBalance = ${feeTokenBalance}`);
+	if(feeEstimate.gte(feeTokenBalance)) {
+		errorResponse(req, res, 503, `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`);
+		return;
+	}
+
+	console.log(`${req.path} response: 200`);
+	res.send(null); // send 200
+
+	// change status
+	try {
+		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
+	}
+	catch(err) {
+		console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_START}`);
+		return;
+	}
+
+	// Pull payment from user's account using transferFrom(userAddress, amount)
+	const confirms = tokenDetails.confirms;
+	try {
+		await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
+	}
+	catch(err) {
+		console.log(err);
 		try {
-			await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+		}
+		catch(err) {
+			console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_FAILED}`);
+		}
+		return;
+	}
+
+	// TODO: Set status
+
+	// If payment is wrapped, unwrap it (ex. WETH -> ETH)
+	if(tokenDetails.wrappedAddress) {
+		try {
+			await (await token.withdraw(priceWei)).wait(confirms);
 		}
 		catch(err) {
 			console.log(err);
-			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
-			return;
-		}
-
-		// TODO: Set status
-
-		// If payment is wrapped, unwrap it (ex. WETH -> ETH)
-		if(tokenDetails.wrappedAddress) {
 			try {
-				await (await token.withdraw(priceWei)).wait(confirms);
+				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
 			}
 			catch(err) {
-				console.log(err);
-				Quote.setStatus(quoteId, QUOTE_STATUS_PAYMENT_FAILED);
-				return;
+				console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_FAILED}`);
 			}
-		}
-
-		// TODO: Set status
-
-		// TODO: Check Bundlr account balance
-
-		// Fund our EOA's Bundlr Account
-		try {
-			let response = await bundlr.fund(bundlrPriceWei);
-			// TODO: should we record the response values?
-			/* {
-				id: '0x15d26881006589bd3ac5366ebd5031d8c14a2755d962337fad7216744fe92ed5',
-				quantity: '3802172224166296',
-				reward: '45832500525000',
-				target: '0x853758425e953739F5438fd6fd0Efe04A477b039'
-			} */
-		}
-		catch(err) {
-			errorResponse(req, res, 500, "Can't fund the quote.");
 			return;
 		}
+	}
 
-		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_END);
-		await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_START);
+	// TODO: Set status
 
-		let files_uploaded = 0;
-		await Promise.all(files.map(async (file, index) => {
-			await File.get(quoteId, index, async (err, quotedFile) => {
-				if(err) {
-					console.log(err);
-					return;
+	// TODO: Check Bundlr account balance
+
+	// Fund our EOA's Bundlr Account
+	try {
+		let response = await bundlr.fund(bundlrPriceWei);
+		// TODO: should we record the response values?
+		/* {
+			id: '0x15d26881006589bd3ac5366ebd5031d8c14a2755d962337fad7216744fe92ed5',
+			quantity: '3802172224166296',
+			reward: '45832500525000',
+			target: '0x853758425e953739F5438fd6fd0Efe04A477b039'
+		} */
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Can't fund the quote.");
+		return;
+	}
+
+	try {
+		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_END);
+		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_START);
+	}
+	catch(err) {
+		console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_UPLOAD_START}`);
+		return;
+	}
+
+	let files_uploaded = 0;
+	await Promise.all(files.map(async (file, index) => {
+		let quotedFile;
+		try {
+			quotedFile = File.get(quoteId, index);
+		}
+		catch(err) {
+			console.log(err);
+			return;			
+		}
+
+		// TODO: get IPFS gateway from config
+		const ipfsFile = `https://cloudflare-ipfs.com/ipfs/${file.substring(7)}`;
+
+		// download file
+		await axios({
+			method: "get",
+			url: ipfsFile,
+			responseType: "arraybuffer"
+		})
+		.then(response => {
+			// download started
+			const contentType = response.headers['content-type'];
+			const httpLength = parseInt(response.headers['content-length']);
+
+			if(httpLength) {
+				if(httpLength != quotedFile.length) {
+					// quoted size is different than real size
+					console.log(`Different lengths, quoted length = ${quotedFile.length}, http length ${httpLength}`);
 				}
-				// TODO: get IPFS gateway from config
-				const ipfsFile = `https://cloudflare-ipfs.com/ipfs/${file.substring(7)}`;
+			}
 
-				// download file
-				await axios({
-						method: "get",
-						url: ipfsFile,
-						responseType: "arraybuffer"
-					})
-					.then(response => {
-						// download started
-						const contentType = response.headers['content-type'];
-						const httpLength = parseInt(response.headers['content-length']);
+			let tags = [];
+			if(contentType) {
+				// TODO: sanitize contentType
+				tags = [{name: "Content-Type", value: contentType}];
+			}
 
-						if(httpLength) {
-							if(httpLength != quotedFile.length) {
-								// quoted size is different than real size
-								console.log(`Different lengths, quoted length = ${quotedFile.length}, http length ${httpLength}`);
-							}
-						}
+			const uploader = bundlr.uploader.chunkedUploader;
 
-						let tags = [];
-						if(contentType) {
-							// TODO: sanitize contentType
-							tags = [{name: "Content-Type", value: contentType}];
-						}
+			uploader.setChunkSize(524288);
+			uploader.setBatchSize(1);
 
-						const uploader = bundlr.uploader.chunkedUploader;
-
-						uploader.setChunkSize(524288);
-						uploader.setBatchSize(1);
-
-						uploader.on("chunkUpload", (chunkInfo) => {
-							//console.log(`Uploaded Chunk number ${chunkInfo.id}, offset of ${chunkInfo.offset}, size ${chunkInfo.size} Bytes, with a total of ${chunkInfo.totalUploaded} bytes uploaded.`);
-						});
-						uploader.on("chunkError", (e) => {
-							//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
-						});
-						uploader.on("done", async (finishRes) => {
-							const transactionId = finishRes.data.id;
-							File.setHash(quoteId, index, transactionId);
-
-							// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
-							try {
-								axios.head(`https://arweave.net/${transactionId}`);
-
-								files_uploaded = files_uploaded + 1;
-								if(files_uploaded == files.length) {
-									await Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
-								}
-
-							}
-							catch(err) {
-								// transactionId not found
-								console.log(`Unable to retreive uploaded file with transaction id ${transactionId}, error: ${err.response.status}`);
-							}
-
-
-						});
-
-						const transactionOptions = {tags: tags};
-						try {
-							// start upload
-							uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
-							// TODO: also hash the file
-						}
-						catch(error) {
-							console.log(error.message);
-							console.log("unique message");
-							// TODO: Revisit this status code and consider changing to something unique
-							// TODO: Add separate status for insufficient funds, upload fail, etc.
-							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
-						}
-					})
-					.catch(error => {
-						console.log(error);
-					});
+			uploader.on("chunkUpload", (chunkInfo) => {
+				//console.log(`Uploaded Chunk number ${chunkInfo.id}, offset of ${chunkInfo.offset}, size ${chunkInfo.size} Bytes, with a total of ${chunkInfo.totalUploaded} bytes uploaded.`);
 			});
-		}));
-	});
+			uploader.on("chunkError", (e) => {
+				//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
+			});
+			uploader.on("done", async (finishRes) => {
+				const transactionId = finishRes.data.id;
+				try {
+					File.setHash(quoteId, index, transactionId);
+				}
+				catch(err) {
+					console.error(err);
+				}
+
+				// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
+				try {
+					axios.head(`https://arweave.net/${transactionId}`);
+
+					files_uploaded = files_uploaded + 1;
+					if(files_uploaded == files.length) {
+						try {
+							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+						}
+						catch(err) {
+							console.error(err);
+						}
+					}
+				}
+				catch(err) {
+					// transactionId not found
+					console.log(`Unable to retreive uploaded file with transaction id ${transactionId}, error: ${err.response.status}`);
+				}
+			});
+
+			const transactionOptions = {tags: tags};
+			try {
+				// start upload
+				uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
+				// TODO: also hash the file
+			}
+			catch(error) {
+				console.log(error.message);
+				// TODO: Revisit this status code and consider changing to something unique
+				// TODO: Add separate status for insufficient funds, upload fail, etc.
+				try {
+					Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+				}
+				catch(err) {
+					console.error(err);
+				}
+			}
+		})
+		.catch(error => {
+			console.error(error);
+		});
+	}));
 };
