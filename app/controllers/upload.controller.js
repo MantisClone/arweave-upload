@@ -169,7 +169,7 @@ exports.upload = async (req, res) => {
 	let priceWei;
 	try {
 		bundlrPriceWei = await bundlr.getPrice(quote.size)
-		priceWei = ethers.BigNumber.from(bundlrPriceWei.toString());
+		priceWei = ethers.BigNumber.from(bundlrPriceWei.toString(10));
 	}
 	catch(err) {
 		errorResponse(req, res, 500, err.message);

@@ -16,7 +16,7 @@ Nonce.get = (userAddress) => {
 }
 
 Nonce.set = (userAddress, nonce) => {
-	const query = 'INSERT OR REPLACE INTO nonce (userAddress, nonce) VALUES (?, ?);';
+	const query = "INSERT OR REPLACE INTO nonce (userAddress, nonce) VALUES (?, ?);";
 	sql.prepare(query).run([userAddress, nonce]);
 };
 

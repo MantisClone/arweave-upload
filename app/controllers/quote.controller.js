@@ -184,10 +184,8 @@ exports.create = async (req, res) => {
 		tokenAmount: tokenAmount.toString(),
 		approveAddress: wallet.address,
 		files: file_lengths
-
 	});
 
-	// Save Reading in the database
 	try {
 		const data = Quote.create(quote);
 		console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
@@ -269,60 +267,77 @@ exports.getLink = async (req, res) => {
 		return;
 	}
 
-	// get userAddress
-	await Quote.get(quoteId, (err, data) => {
-		if(err) {
-			if(err.code == 404) {
-				errorResponse(req, res, 404, err.message);
-				return;
-			}
-			errorResponse(req, res, 500, err.message || "Error occurred while looking up userAddress.");
+	let quote;
+	try {
+		quote = Quote.get(quoteId);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Error occurred while looking up userAddress.");
+		return;
+	}
+
+	if(quote == undefined) {
+		errorResponse(req, res, 404, "Quote not found.");
+		return;
+	}
+	if(quote?.status != Quote.QUOTE_STATUS_UPLOAD_END) {
+		errorResponse(req, res, 400, "Upload not completed yet.");
+		return;
+	}
+
+	const userAddress = quote.userAddress;
+	const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quoteId + nonce.toString()));
+	let signerAddress;
+	try {
+		signerAddress = ethers.utils.verifyMessage(message, signature);
+	}
+	catch(err) {
+		errorResponse(req, res, 403, "Invalid signature.");
+		return;
+	}
+
+	if(signerAddress != userAddress) {
+		errorResponse(req, res, 403, "Invalid signature.");
+		return;
+	}
+
+	let data;
+	try {
+		data = Nonce.get(userAddress);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Error occurred while validating nonce.");
+		return;
+	}
+	if(data) {
+		const old_nonce = data.nonce;
+		if(parseFloat(nonce) <= parseFloat(old_nonce)) {
+			errorResponse(req, res, 403, "Invalid nonce.");
 			return;
 		}
-		const userAddress = data.userAddress;
-		const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quoteId + nonce.toString()));
-		let signerAddress;
-		try {
-			signerAddress = ethers.utils.verifyMessage(message, signature);
-		}
-		catch(err) {
-			errorResponse(req, res, 403, "Invalid signature.");
-			return;
-		}
+	}
 
-		if(signerAddress != userAddress) {
-			errorResponse(req, res, 403, "Invalid signature.");
-			return;
-		}
+	try {
+		Nonce.set(userAddress, nonce);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Error occurred while setting nonce.");
+		return;
+	}
 
-		Nonce.get(userAddress, async (err, data) => {
-			if(err) {
-				errorResponse(req, res, 500, err.message || "Error occurred while validating nonce.");
-				return;
-			}
-			if(data) {
-				const old_nonce = data.nonce;
-				if(parseFloat(nonce) <= parseFloat(old_nonce)) {
-					errorResponse(req, res, 403, "Invalid nonce.");
-					return;
-				}
-			}
-			Nonce.set(userAddress, nonce);
+	let link;
+	try {
+		link = Quote.getLink(quoteId);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, "Error occurred while looking up link.");
+		return;
+	}
 
-			// TDO: check if none links found, and give 404: No transaction hashes found
-			await Quote.getLink(quoteId, (err, data) => {
-				if(err) {
-					if(err.code == 404) {
-						errorResponse(req, res, 404, err.message);
-						return;
-					}
-					errorResponse(req, res, 500, err.message || "Error occurred while looking up link.");
-					return;
-				}
-				// send receipt for data
-				console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
-				res.send(data);
-			});
-		});
-	});
+	if(link == undefined) {
+		errorResponse(req, res, 404, "Link(s) not found.");
+		return;
+	}
+	console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
+	res.send(link);
 };

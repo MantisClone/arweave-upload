@@ -34,7 +34,7 @@ Quote.create = (newQuote) => {
 		newQuote.approveAddress,
 	];
 
-	const quote_sql = 'INSERT INTO quote (quoteId, status, created, chainId, tokenAddress, userAddress, tokenAmount, approveAddress) VALUES (?, ?, ?, ?, ?, ?, ?, ?);'
+	const quote_sql = "INSERT INTO quote (quoteId, status, created, chainId, tokenAddress, userAddress, tokenAmount, approveAddress) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
 	
 	sql.prepare(quote_sql).run(params)
 
@@ -74,21 +74,11 @@ Quote.getStatus = (quoteId) => {
 };
 
 Quote.setStatus = (quoteId, status) => {
-	const query = 'UPDATE quote SET status = ? WHERE quoteId = ?;'
+	const query = "UPDATE quote SET status = ? WHERE quoteId = ?;"
 	sql.prepare(query).run([status, quoteId]);
 };
 
 Quote.getLink = (quoteId) => {
-	// check status
-	const status = Quote.getStatus(quoteId);
-	if(status == undefined) {
-		throw new Error("Quote not found");
-	}
-
-	if(status != Quote.QUOTE_STATUS_UPLOAD_END) {
-		throw new Error("Upload not completed yet.");
-	}
-
 	const query = `SELECT "arweave" AS "type", transactionHash
 		FROM files
 		WHERE quoteId = ?
