@@ -133,18 +133,18 @@ describe("DBS Arweave Upload", function () {
                     signature: signature,
                 }).catch((err) => err.response);
 
-                // Attempt upload with nonce lower than previous
-                nonce = 0;
-                message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
-                signature = await wallet.signMessage(message);
-                uploadResponse = await axios.post(`http://localhost:8081/upload`, {
-                    quoteId: quote.quoteId,
-                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
-                    nonce: nonce,
-                    signature: signature,
-                }).catch((err) => err.response);
-                expect(uploadResponse.status).equals(403);
-                expect(uploadResponse.data.message).contains("Invalid nonce");
+                // // Attempt upload with nonce lower than previous
+                // nonce = 0;
+                // message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                // signature = await wallet.signMessage(message);
+                // uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                //     quoteId: quote.quoteId,
+                //     files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                //     nonce: nonce,
+                //     signature: signature,
+                // }).catch((err) => err.response);
+                // expect(uploadResponse.status).equals(403);
+                // expect(uploadResponse.data.message).contains("Invalid nonce");
             });
         });
     });
