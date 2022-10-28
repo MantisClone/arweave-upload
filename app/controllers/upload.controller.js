@@ -91,12 +91,12 @@ exports.upload = async (req, res) => {
 		quote = Quote.get(quoteId);
 		if(quote == undefined) {
 			errorResponse(req, res, 404, "Quote not found.");
-			return;			
+			return;
 		}
 	}
 	catch(err) {
 		errorResponse(req, res, 500, "Error occurred while validating quote.");
-		return;	
+		return;
 	}
 
 	const userAddress = quote.userAddress;
@@ -115,16 +115,15 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	let old_nonce;
+	let oldNonce;
 	try {
-		old_nonce = Nonce.get(userAddress);
+		oldNonce = Nonce.get(userAddress)?.nonce || 0.0;
 	}
 	catch(err) {
 		errorResponse(req, res, 500, "Error occurred while validating nonce.");
 		return;
 	}
-
-	if(parseFloat(nonce) <= parseFloat(old_nonce)) {
+	if(parseFloat(nonce) <= parseFloat(oldNonce)) {
 		errorResponse(req, res, 403, "Invalid nonce.");
 		return;
 	}
@@ -354,7 +353,7 @@ exports.upload = async (req, res) => {
 		}
 		catch(err) {
 			console.log(err);
-			return;			
+			return;
 		}
 
 		// TODO: get IPFS gateway from config

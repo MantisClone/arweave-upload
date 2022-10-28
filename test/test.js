@@ -1,7 +1,7 @@
 const ethers = require("ethers");
 const axios = require("axios");
 const { expect } = require("chai");
-const { getQuote } = require("./test.helpers.js");
+const { getQuote, waitForUpload } = require("./test.helpers.js");
 
 describe("DBS Arweave Upload", function () {
     const provider = ethers.getDefaultProvider("https://rpc-mumbai.maticvigil.com/");
@@ -67,6 +67,7 @@ describe("DBS Arweave Upload", function () {
                 const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
                 expect(getStatusResponse.data.status).equals(1);
             });
+
         })
 
         describe("with approval", function () {
@@ -101,17 +102,44 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.status).equals(200);
                 expect(uploadResponse.data).equals('');
 
-
-                let status
-                for(let i = 0; i < timeoutSeconds; i++) {
-                    let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
-                    expect(getStatusResponse).to.exist;
-                    expect(getStatusResponse.status).to.equal(200);
-                    status = getStatusResponse.data.status;
-                    if(status >= 5) break;
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
                 expect(status).equals(5);
+            });
+
+            it("should respond 403 when nonce is old", async function() {
+                const timeoutSeconds = 120;
+                this.timeout(timeoutSeconds * 1000);
+
+                const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
+                const quote = getQuoteResponse.data;
+
+                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+
+                let nonce = Math.floor(new Date().getTime()) / 1000;
+                let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                let signature = await wallet.signMessage(message);
+                let uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    nonce: nonce,
+                    signature: signature,
+                }).catch((err) => err.response);
+
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
+                expect(status).equals(5);
+
+                // Attempt upload with nonce lower than previous
+                nonce = 0;
+                message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                signature = await wallet.signMessage(message);
+                uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    nonce: nonce,
+                    signature: signature,
+                }).catch((err) => err.response);
+                expect(uploadResponse.status).equals(403);
+                expect(uploadResponse.data.message).contains("Invalid nonce");
             });
         });
     });
