@@ -68,35 +68,6 @@ describe("DBS Arweave Upload", function () {
                 expect(getStatusResponse.data.status).equals(1);
             });
 
-            it("should respond 403 when nonce is old", async function() {
-                this.timeout(20 * 1000);
-
-                const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
-                const quote = getQuoteResponse.data;
-
-                let nonce = Math.floor(new Date().getTime()) / 1000;
-                let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
-                let signature = await wallet.signMessage(message);
-                let uploadResponse = await axios.post(`http://localhost:8081/upload`, {
-                    quoteId: quote.quoteId,
-                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
-                    nonce: nonce,
-                    signature: signature,
-                }).catch((err) => err.response);
-
-                // Attempt upload with nonce lower than previous
-                nonce = 0;
-                message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
-                signature = await wallet.signMessage(message);
-                uploadResponse = await axios.post(`http://localhost:8081/upload`, {
-                    quoteId: quote.quoteId,
-                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
-                    nonce: nonce,
-                    signature: signature,
-                }).catch((err) => err.response);
-                expect(uploadResponse.status).equals(403);
-                expect(uploadResponse.data.message).contains("Invalid nonce");
-            });
         })
 
         describe("with approval", function () {
@@ -142,6 +113,38 @@ describe("DBS Arweave Upload", function () {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
                 expect(status).equals(5);
+            });
+
+            it("should respond 403 when nonce is old", async function() {
+                this.timeout(20 * 1000);
+
+                const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
+                const quote = getQuoteResponse.data;
+
+                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+
+                let nonce = Math.floor(new Date().getTime()) / 1000;
+                let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                let signature = await wallet.signMessage(message);
+                let uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    nonce: nonce,
+                    signature: signature,
+                }).catch((err) => err.response);
+
+                // Attempt upload with nonce lower than previous
+                nonce = 0;
+                message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                signature = await wallet.signMessage(message);
+                uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    nonce: nonce,
+                    signature: signature,
+                }).catch((err) => err.response);
+                expect(uploadResponse.status).equals(403);
+                expect(uploadResponse.data.message).contains("Invalid nonce");
             });
         });
     });
