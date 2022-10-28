@@ -117,7 +117,7 @@ exports.upload = async (req, res) => {
 
 	let old_nonce;
 	try {
-		old_nonce = Nonce.get(userAddress) || "0";
+		old_nonce = Nonce.get(userAddress)?.nonce || 0.0;
 	}
 	catch(err) {
 		errorResponse(req, res, 500, "Error occurred while validating nonce.");
