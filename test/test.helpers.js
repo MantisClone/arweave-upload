@@ -11,3 +11,14 @@ exports.getQuote = async (wallet, size = 119762) => {
         },
     });
 }
+
+exports.waitForUpload = async (timeoutSeconds, quoteId) => {
+    let status;
+    for(let i = 0; i < timeoutSeconds; i++) {
+        const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quoteId}`);
+        status = getStatusResponse.data.status;
+        if(status >= 5) break;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    return status;
+};

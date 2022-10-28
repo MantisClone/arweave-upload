@@ -102,16 +102,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.status).equals(200);
                 expect(uploadResponse.data).equals('');
 
-
-                let status
-                for(let i = 0; i < timeoutSeconds; i++) {
-                    let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
-                    expect(getStatusResponse).to.exist;
-                    expect(getStatusResponse.status).to.equal(200);
-                    status = getStatusResponse.data.status;
-                    if(status >= 5) break;
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
                 expect(status).equals(5);
             });
 
@@ -132,6 +123,9 @@ describe("DBS Arweave Upload", function () {
                     nonce: nonce,
                     signature: signature,
                 }).catch((err) => err.response);
+
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
+                expect(status).equals(5);
 
                 // // Attempt upload with nonce lower than previous
                 // nonce = 0;
