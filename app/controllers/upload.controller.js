@@ -124,6 +124,10 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
+	console.log(`nonce = ${nonce.toString()}`);
+	console.log(`old_nonce = ${old_nonce.toString()}`);
+
+
 	if(parseFloat(nonce) <= parseFloat(old_nonce)) {
 		errorResponse(req, res, 403, "Invalid nonce.");
 		return;
