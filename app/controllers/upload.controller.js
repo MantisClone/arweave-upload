@@ -117,13 +117,14 @@ exports.upload = async (req, res) => {
 
 	let old_nonce;
 	try {
-		old_nonce = Nonce.get(userAddress);
+		old_nonce = Nonce.get(userAddress) || "0";
 	}
 	catch(err) {
 		errorResponse(req, res, 500, "Error occurred while validating nonce.");
 		return;
 	}
 
+	console.log(`typeof(old_nonce) = ${typeof old_nonce}`);
 	console.log(`nonce = ${nonce.toString()}`);
 	console.log(`old_nonce = ${old_nonce.toString()}`);
 
