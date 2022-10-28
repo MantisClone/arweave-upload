@@ -115,21 +115,15 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	let old_nonce;
+	let oldNonce;
 	try {
-		old_nonce = Nonce.get(userAddress)?.nonce || 0.0;
+		oldNonce = Nonce.get(userAddress)?.nonce || 0.0;
 	}
 	catch(err) {
 		errorResponse(req, res, 500, "Error occurred while validating nonce.");
 		return;
 	}
-
-	console.log(`typeof(old_nonce) = ${typeof old_nonce}`);
-	console.log(`nonce = ${nonce.toString()}`);
-	console.log(`old_nonce = ${old_nonce.toString()}`);
-
-
-	if(parseFloat(nonce) <= parseFloat(old_nonce)) {
+	if(parseFloat(nonce) <= parseFloat(oldNonce)) {
 		errorResponse(req, res, 403, "Invalid nonce.");
 		return;
 	}

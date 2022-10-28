@@ -301,22 +301,18 @@ exports.getLink = async (req, res) => {
 		return;
 	}
 
-	let data;
+	let oldNonce;
 	try {
-		data = Nonce.get(userAddress);
+		oldNonce = Nonce.get(userAddress)?.nonce || 0.0;
 	}
 	catch(err) {
 		errorResponse(req, res, 500, "Error occurred while validating nonce.");
 		return;
 	}
-	if(data) {
-		const old_nonce = data.nonce;
-		if(parseFloat(nonce) <= parseFloat(old_nonce)) {
-			errorResponse(req, res, 403, "Invalid nonce.");
-			return;
-		}
+	if(parseFloat(nonce) <= parseFloat(oldNonce)) {
+		errorResponse(req, res, 403, "Invalid nonce.");
+		return;
 	}
-
 	try {
 		Nonce.set(userAddress, nonce);
 	}
