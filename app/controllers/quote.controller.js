@@ -216,7 +216,7 @@ exports.getStatus = async (req, res) => {
 			errorResponse(req, res, 404, "Quote not found.");
 			return;
 		}
-		console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
+		console.log(`${req.path} response: 200: ${JSON.stringify(status)}`);
 		res.send(status);
 	}
 	catch(err) {
@@ -338,6 +338,6 @@ exports.getLink = async (req, res) => {
 		errorResponse(req, res, 404, "Link(s) not found.");
 		return;
 	}
-	console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
+	console.log(`${req.path} response: 200: ${JSON.stringify(link)}`);
 	res.send(link);
 };
