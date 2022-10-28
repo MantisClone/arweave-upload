@@ -160,10 +160,9 @@ exports.upload = async (req, res) => {
 		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 	}
 	catch(err) {
-		errorResponse(req, res, 500, err.message);
+		errorResponse(req, res, 500, "Could not establish connection to payment processor.");
 		return;
 	}
-
 	let bundlrPriceWei;
 	let priceWei;
 	try {
@@ -171,12 +170,10 @@ exports.upload = async (req, res) => {
 		priceWei = ethers.BigNumber.from(bundlrPriceWei.toString(10));
 	}
 	catch(err) {
-		errorResponse(req, res, 500, err.message);
+		errorResponse(req, res, 500, "Could not query price from payment processor.");
 		return;
 	}
-
 	const quoteTokenAmount = ethers.BigNumber.from(quote.tokenAmount);
-
 	if(priceWei.gte(quoteTokenAmount)) {
 		errorResponse(req, res, 402, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
 		return;
