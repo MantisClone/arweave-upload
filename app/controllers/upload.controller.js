@@ -266,8 +266,9 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
+	// send 200
 	console.log(`${req.path} response: 200`);
-	res.send(null); // send 200
+	res.send(null);
 
 	// change status
 	try {
