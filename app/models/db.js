@@ -1,7 +1,7 @@
-//const fs = require('fs');
-const sqlite3 = require('sqlite3');
-
 const db_file = process.env.SQLITE_DB_PATH;
+
+const sqlite = require('better-sqlite3');
+const path = require('path');
 
 const create_quote = `
 	CREATE TABLE IF NOT EXISTS "quote" (
@@ -37,51 +37,27 @@ const create_nonce = `
 	);
 `;
 
-const db = new sqlite3.Database(db_file, (err) => {
-	if(err) {
-		console.log('Could not connect to database', err);
-		// TODO: should we quit?
+let db;
+try {
+	db = new sqlite(path.resolve(db_file));
+}
+catch(err) {
+	console.log(err);
+}
+
+const check_sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='quote';";
+const stmt = db.prepare(check_sql);
+const tables = stmt.get();
+if(!tables) {
+	try {
+		db.prepare(create_quote).run();
+		db.prepare(create_files).run();
+		db.prepare(create_nonce).run();
 	}
-	else {
-		check_sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='quote';";
-		db.get(check_sql, [], (err, res) => {
-			if(err) {
-				// unable to tell if quote table exists
-				console.log(err);
-				return;
-			}
-			else {
-				if(res) {
-					console.log('Connected to existing database');
-				}
-				else {
-					// no quote table, create
-					db.get(create_quote, [], (err, res) => {
-						if(err) {
-							console.log(err);
-							return false;
-						}
-						console.log("Created quote table");
-					});
-					db.get(create_files, [], (err, res) => {
-						if(err) {
-							console.log(err);
-							return false;
-						}
-						console.log("Created files table");
-					});
-					db.get(create_nonce, [], (err, res) => {
-						if(err) {
-							console.log(err);
-							return false;
-						}
-						console.log("Created nonce table");
-					});
-				}
-			}
-		});
+	catch(err) {
+		console.log(err);
 	}
-});
+}
 
 module.exports = db;
 
