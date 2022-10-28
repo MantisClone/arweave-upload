@@ -91,12 +91,12 @@ exports.upload = async (req, res) => {
 		quote = Quote.get(quoteId);
 		if(quote == undefined) {
 			errorResponse(req, res, 404, "Quote not found.");
-			return;			
+			return;
 		}
 	}
 	catch(err) {
 		errorResponse(req, res, 500, "Error occurred while validating quote.");
-		return;	
+		return;
 	}
 
 	const userAddress = quote.userAddress;
@@ -358,7 +358,7 @@ exports.upload = async (req, res) => {
 		}
 		catch(err) {
 			console.log(err);
-			return;			
+			return;
 		}
 
 		// TODO: get IPFS gateway from config
