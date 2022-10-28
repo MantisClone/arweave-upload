@@ -213,7 +213,7 @@ exports.getStatus = async (req, res) => {
 	try {
 		const status = Quote.getStatus(quoteId);
 		if(status == undefined) {
-			errorResponse(req, res, 404, err.message);
+			errorResponse(req, res, 404, "Quote not found.");
 			return;
 		}
 		console.log(`${req.path} response: 200: ${JSON.stringify(data)}`);
