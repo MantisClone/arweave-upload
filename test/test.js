@@ -1,5 +1,6 @@
 const ethers = require("ethers");
 const axios = require("axios");
+const sinon = require("sinon");
 const { expect } = require("chai");
 const { getQuote, waitForUpload } = require("./test.helpers.js");
 
@@ -51,6 +52,30 @@ describe("DBS Arweave Upload", function () {
 
                 const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
+
+                const nonce = Math.floor(new Date().getTime()) / 1000;
+                const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                const signature = await wallet.signMessage(message);
+                const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    nonce: nonce,
+                    signature: signature,
+                }).catch((err) => err.response);
+                expect(uploadResponse.status).equals(400);
+                expect(uploadResponse.data.message).contains("Allowance is less than current rate")
+
+                const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
+                expect(getStatusResponse.data.status).equals(1);
+            });
+
+            it("should fail to pull funds when approval is revoked after allowance check", async function () {
+                this.timeout(20 * 1000);
+
+                const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
+                const quote = getQuoteResponse.data;
+
+                const stub = sinon.stub(ethers.Contract, "allowance").returns(ethers.MaxInt256);
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
