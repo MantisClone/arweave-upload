@@ -216,6 +216,7 @@ exports.upload = async (req, res) => {
 	}
 
 	// Create payment token contract handle
+	let token;
 	try {
 		const abi = [
 			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
@@ -225,8 +226,8 @@ exports.upload = async (req, res) => {
 			'function withdraw(uint256 value) external',
 			'function transfer(address to, uint256 value) external returns (bool)'
 		];
-		const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
-		const token = new ethers.Contract(tokenAddress, abi, wallet);
+		const tokenAddress = tokenDetails?.wrappedAddress || tokenDetails.tokenAddress ;
+		token = new ethers.Contract(tokenAddress, abi, wallet);
 		console.log(`payment token address = ${token.address}`);
 	}
 	catch(err) {
