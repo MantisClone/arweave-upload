@@ -157,6 +157,8 @@ describe("DBS Arweave Upload", function () {
                     "approveAddress"
                 );
 
+                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+
                 let nonce = Math.floor(new Date().getTime()) / 1000;
                 let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
                 let signature = await wallet.signMessage(message);
