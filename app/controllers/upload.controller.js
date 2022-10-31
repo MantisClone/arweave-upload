@@ -288,6 +288,12 @@ exports.upload = async (req, res) => {
 		errorResponse(req, res, 500, `Error occurred while estimating gas costs for upload.`);
 		return;
 	}
+	console.log(`transferFromEstimate = ${transferFromEstimate}`);
+	console.log(`unwrapEstimate = ${unwrapEstimate}`);
+	console.log(`sendEthEstimate = ${sendEthEstimate}`);
+	console.log(`wrapEstimate = ${wrapEstimate}`);
+	console.log(`transferEstimate = ${transferEstimate}`);
+
 
 	let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
 	if(paymentToken.wrappedAddress) {
