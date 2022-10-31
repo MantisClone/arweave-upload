@@ -76,7 +76,7 @@ describe("DBS Arweave Upload", function () {
                 const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
 
-                const stub = sinon.stub(ethers.Contract, "allowance").returns(ethers.MaxInt256);
+                const stub = sinon.stub(token, "allowance").returns(ethers.MaxInt256);
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
