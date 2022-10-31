@@ -258,7 +258,7 @@ exports.upload = async (req, res) => {
 	const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
 	console.log(`feeEstimate = ${feeEstimate}`);
 
-	// Check server fee token balance
+	// Check server fee token balance exeeds fee estimate
 	const feeTokenBalance = await wallet.getBalance();
 	console.log(`feeTokenBalance = ${feeTokenBalance}`);
 	if(feeEstimate.gte(feeTokenBalance)) {
