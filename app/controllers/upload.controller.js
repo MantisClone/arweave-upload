@@ -178,7 +178,7 @@ exports.upload = async (req, res) => {
 	const quoteTokenAmount = ethers.BigNumber.from(quote.tokenAmount);
 
 	if(priceWei.gte(quoteTokenAmount)) {
-		errorResponse(req, res, 402, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
+		errorResponse(req, res, 400, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
 		return;
 	}
 
