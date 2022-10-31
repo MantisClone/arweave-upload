@@ -212,6 +212,7 @@ exports.upload = async (req, res) => {
 	}
 	catch(err) {
 		errorResponse(req, res, 500, `Error occurred while creating a Wallet instance.`);
+		return;
 	}
 
 	// Create payment token contract handle
@@ -255,6 +256,7 @@ exports.upload = async (req, res) => {
 	}
 	catch(err) {
 		errorResponse(req, res, 500, `Error occurred while checking user token balance.`);
+		return;
 	}
 	console.log(`userBalance = ${userBalance}`);
 	if(userBalance.lt(priceWei)) {
@@ -310,6 +312,7 @@ exports.upload = async (req, res) => {
 	}
 	catch(err) {
 		errorResponse(req, res, 500, `Error occurred while getting server fee token balance.`);
+		return;
 	}
 	console.log(`feeTokenBalance = ${feeTokenBalance}`);
 	if(feeEstimate.gte(feeTokenBalance)) {
