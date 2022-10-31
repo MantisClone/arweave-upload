@@ -183,40 +183,65 @@ exports.upload = async (req, res) => {
 	}
 
 	// Create provider
-	const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
-	const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-	const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
-	const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
 	let provider;
-	if(jsonRpcUri === "default") {
-		const defaultProviderUrl = tokenDetails.providerUrl;
-		console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
-		provider = ethers.getDefaultProvider(defaultProviderUrl);
+	try {
+		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
+		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
+		const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
+		if(jsonRpcUri === "default") {
+			const defaultProviderUrl = tokenDetails.providerUrl;
+			console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
+			provider = ethers.getDefaultProvider(defaultProviderUrl);
+		}
+		else {
+			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
+			provider = ethers.getDefaultProvider(jsonRpcUri);
+		}
+		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 	}
-	else {
-		console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
-		provider = ethers.getDefaultProvider(jsonRpcUri);
+	catch(err) {
+		errorResponse(req, res, 500, `Error occurred while establishing connection to Node RPC provider`);
+		return;
 	}
-	console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 
 	// Create wallet
-	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+	let wallet;
+	try {
+		wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, `Error occurred while creating a Wallet instance.`);
+	}
 
 	// Create payment token contract handle
-	const abi = [
-		'function transferFrom(address from, address to, uint256 value) external returns (bool)',
-		'function allowance(address owner, address spender) external view returns (uint256)',
-		'function balanceOf(address owner) external view returns (uint256)',
-		'function deposit(uint256 value) external',
-		'function withdraw(uint256 value) external',
-		'function transfer(address to, uint256 value) external returns (bool)'
-	];
-	const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
-	const token = new ethers.Contract(tokenAddress, abi, wallet);
-	console.log(`payment token address = ${token.address}`);
+	try {
+		const abi = [
+			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
+			'function allowance(address owner, address spender) external view returns (uint256)',
+			'function balanceOf(address owner) external view returns (uint256)',
+			'function deposit(uint256 value) external',
+			'function withdraw(uint256 value) external',
+			'function transfer(address to, uint256 value) external returns (bool)'
+		];
+		const tokenAddress = tokenDetails.wrappedAddress || tokenDetails.tokenAddress ;
+		const token = new ethers.Contract(tokenAddress, abi, wallet);
+		console.log(`payment token address = ${token.address}`);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, `Error occurred while connecting to payment token contract.`);
+		return;
+	}
 
 	// Check allowance
-	const allowance = await token.allowance(userAddress, wallet.address);
+	let allowance;
+	try {
+		allowance = await token.allowance(userAddress, wallet.address);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, `Error occured while checking allowance.`);
+		return;
+	}
 	console.log(`allowance = ${allowance}`);
 	if(allowance.lt(priceWei)) {
 		errorResponse(req, res, 400, `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`);
@@ -224,31 +249,41 @@ exports.upload = async (req, res) => {
 	}
 
 	// Check that user has sufficient funds
-	const userBalance = await token.balanceOf(userAddress);
+	let userBalance;
+	try {
+		userBalance = await token.balanceOf(userAddress);
+	}
+	catch(err) {
+		errorResponse(req, res, 500, `Error occurred while checking user token balance.`);
+	}
 	console.log(`userBalance = ${userBalance}`);
 	if(userBalance.lt(priceWei)) {
 		errorResponse(req, res, 400, `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`);
 		return;
 	}
 
-	// Estimate cost of:
-	// 1. Pull ERC-20 token from userAddress
-	const transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
-	// 2. Unwrap if necessary
-	const unwrapEstimate = await token.estimateGas.withdraw(priceWei);
-	// 3. Push funds to Bundlr account
-	// TODO: Don't hardcode Bundlr Address. Or maybe it's fine.
-	const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
-	const sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei});
-	// 4. Possibly refund in case of non-recoverable failure
-	const wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
-	const transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
-
-	console.log(`transferFromEstimate = ${transferFromEstimate}`);
-	console.log(`unwrapEstimate = ${unwrapEstimate}`);
-	console.log(`sendEthEstimate = ${sendEthEstimate}`);
-	console.log(`wrapEstimate = ${wrapEstimate}`);
-	console.log(`transferEstimate = ${transferEstimate}`);
+	// Estimate gas costs for full upload process
+	let transferFromEstimate;
+	let unwrapEstimate;
+	let sendEthEstimate
+	let wrapEstimate;
+	let transferEstimate;
+	try {
+		// 1. Pull ERC-20 token from userAddress
+		transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
+		// 2. Unwrap if necessary
+		unwrapEstimate = await token.estimateGas.withdraw(priceWei);
+		// 3. Push funds to Bundlr account
+		const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
+		sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei}); // Assume price not dependent on "to" address
+		// 4. Possibly refund in case of non-recoverable failure
+		wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
+		transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
+	}
+	catch(err) {
+		errorResponse(req, res, 500, `Error occurred while estimating gas costs for upload.`);
+		return;
+	}
 
 	let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
 	if(tokenDetails.wrappedAddress) {
@@ -256,13 +291,26 @@ exports.upload = async (req, res) => {
 	}
 	console.log(`gasEstimate = ${gasEstimate}`);
 
-	const feeData = await provider.getFeeData();
+	let feeData;
+	try {
+		feeData = await provider.getFeeData();
+	}
+	catch(err) {
+		errorResponse(req, res, 500, `Error occurred while getting fee data.`);
+		return;
+	}
 	// Assume all payment chains support EIP-1559 transactions.
 	const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
 	console.log(`feeEstimate = ${feeEstimate}`);
 
 	// Check server fee token balance
-	const feeTokenBalance = await wallet.getBalance();
+	let feeTokenBalance;
+	try {
+		feeTokenBalance = await wallet.getBalance();
+	}
+	catch(err) {
+		errorResponse(req, res, 500, `Error occurred while getting server fee token balance.`);
+	}
 	console.log(`feeTokenBalance = ${feeTokenBalance}`);
 	if(feeEstimate.gte(feeTokenBalance)) {
 		errorResponse(req, res, 503, `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`);
