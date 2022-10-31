@@ -34,7 +34,7 @@ jobs:
       run: |
         npm start &
         sleep 2
-        npm test -- -grep "should respond 403 when nonce is old"
+        npm test -- -grep "should fail to pull funds when approval is revoked after allowance check"
       env:
         # Server env vars
         ACCEPTED_PAYMENTS: ethereum,matic,boba,boba-eth
