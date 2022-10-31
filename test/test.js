@@ -148,6 +148,14 @@ describe("DBS Arweave Upload", function () {
 
                 const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
+                expect(getQuoteResponse.status).equals(200);
+                expect(quote).contains.all.keys(
+                    "quoteId",
+                    "chainId",
+                    "tokenAddress",
+                    "tokenAmount",
+                    "approveAddress"
+                );
 
                 let nonce = Math.floor(new Date().getTime()) / 1000;
                 let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
@@ -158,14 +166,11 @@ describe("DBS Arweave Upload", function () {
                     nonce: nonce,
                     signature: signature,
                 }).catch((err) => err.response);
+                expect(uploadResponse.status).equals(200);
+                expect(uploadResponse.data).equals('');
 
-                let status
-                for(let i = 0; i < timeoutSeconds; i++) {
-                    let getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
-                    status = getStatusResponse.data.status;
-                    if(status >= 5) break;
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
+                expect(status).equals(5);
 
                 nonce = Math.floor(new Date().getTime()) / 1000;
                 message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
