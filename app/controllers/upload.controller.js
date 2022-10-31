@@ -290,7 +290,7 @@ exports.upload = async (req, res) => {
 	}
 
 	let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
-	if(tokenDetails.wrappedAddress) {
+	if(paymentToken.wrappedAddress) {
 		gasEstimate = gasEstimate.add(unwrapEstimate).add(wrapEstimate);
 	}
 	console.log(`gasEstimate = ${gasEstimate}`);
@@ -335,7 +335,7 @@ exports.upload = async (req, res) => {
 	}
 
 	// Pull payment from user's account using transferFrom(userAddress, amount)
-	const confirms = tokenDetails.confirms;
+	const confirms = paymentToken.confirms;
 	try {
 		await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 	}
@@ -353,7 +353,7 @@ exports.upload = async (req, res) => {
 	// TODO: Set status
 
 	// If payment is wrapped, unwrap it (ex. WETH -> ETH)
-	if(tokenDetails.wrappedAddress) {
+	if(paymentToken.wrappedAddress) {
 		try {
 			await (await token.withdraw(priceWei)).wait(confirms);
 		}
