@@ -182,15 +182,15 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
+
 	// Create provider
 	let provider;
 	try {
 		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
 		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
 		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
-		const tokenDetails = acceptToken(quote.chainId, quote.tokenAddress);
 		if(jsonRpcUri === "default") {
-			const defaultProviderUrl = tokenDetails.providerUrl;
+			const defaultProviderUrl = paymentToken.providerUrl;
 			console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
 			provider = ethers.getDefaultProvider(defaultProviderUrl);
 		}
@@ -226,7 +226,7 @@ exports.upload = async (req, res) => {
 			'function withdraw(uint256 value) external',
 			'function transfer(address to, uint256 value) external returns (bool)'
 		];
-		const tokenAddress = tokenDetails?.wrappedAddress || tokenDetails.tokenAddress ;
+		const tokenAddress = paymentToken?.wrappedAddress || paymentToken.tokenAddress ;
 		token = new ethers.Contract(tokenAddress, abi, wallet);
 		console.log(`payment token address = ${token.address}`);
 	}
