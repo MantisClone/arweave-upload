@@ -3,6 +3,7 @@ const axios = require("axios");
 const sinon = require("sinon");
 const { expect } = require("chai");
 const { getQuote, waitForUpload } = require("./test.helpers.js");
+const { upload } = require("../app/controllers/upload.controller.js");
 
 describe("DBS Arweave Upload", function () {
     const provider = ethers.getDefaultProvider("https://rpc-mumbai.maticvigil.com/");
@@ -80,12 +81,14 @@ describe("DBS Arweave Upload", function () {
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
                 const signature = await wallet.signMessage(message);
-                const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
-                    quoteId: quote.quoteId,
-                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
-                    nonce: nonce,
-                    signature: signature,
-                }).catch((err) => err.response);
+                const uploadResponse = await upload({
+                    body: {
+                        quoteId: quote.quoteId,
+                        files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                        nonce: nonce,
+                        signature: signature
+                    }
+                });
                 expect(uploadResponse.status).equals(400);
                 expect(uploadResponse.data.message).contains("Allowance is less than current rate")
 
