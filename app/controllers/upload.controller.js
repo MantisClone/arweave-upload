@@ -421,7 +421,14 @@ exports.upload = async (req, res) => {
 		}
 		catch(err) {
 			console.error(`Error occurred while reading quoted file length: ${err?.name}: ${err?.message}`);
-			return;
+			try {
+				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR);
+			}
+			catch(err) {
+				console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR: ${err?.name}: ${err?.message}}`);
+				return Promise.reject(err);
+			}
+			return Promise.reject(err);
 		}
 
 		// TODO: get IPFS gateway from config
