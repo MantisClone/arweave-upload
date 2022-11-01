@@ -344,12 +344,12 @@ exports.upload = async (req, res) => {
 		await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 	}
 	catch(err) {
-		console.log(err);
+		console.error(`Error occurred while pulling payment from user address: ${err?.name}: ${err?.message}}`);
 		try {
 			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED);
 		}
 		catch(err) {
-			console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED}`);
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED: ${err?.name}: ${err?.message}}`);
 		}
 		return;
 	}
