@@ -519,8 +519,9 @@ exports.upload = async (req, res) => {
 				}
 			}
 		})
-		.catch(error => {
-			console.error(error);
+		.catch(err => {
+			console.error(`Error occurred while downloading file ${file}, index ${index}: ${err?.name}: ${err?.message}`);
+			return Promise.reject(err);
 		});
 	}));
 };
