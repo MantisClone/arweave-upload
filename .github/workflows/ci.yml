@@ -32,9 +32,9 @@ jobs:
 
     - name: Run tests
       run: |
-        npm start &
+        npm start 2>&1 &
         sleep 2
-        npm test -- -grep "should respond 403 when nonce is old"
+        npm test
       env:
         # Server env vars
         ACCEPTED_PAYMENTS: ethereum,matic,boba,boba-eth
