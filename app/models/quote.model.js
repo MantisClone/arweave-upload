@@ -83,7 +83,6 @@ Quote.getStatus = (quoteId) => {
 };
 
 Quote.setStatus = (quoteId, status) => {
-	console.log(`setStatus = ${status}`);
 	const query = "UPDATE quote SET status = ? WHERE quoteId = ?;"
 	sql.prepare(query).run([status, quoteId]);
 };
