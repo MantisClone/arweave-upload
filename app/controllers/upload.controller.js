@@ -325,6 +325,8 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
+	// TODO: Consider Checking Bundlr account balance
+
 	// send 200
 	console.log(`${req.path} response: 200`);
 	res.send(null);
@@ -379,9 +381,13 @@ exports.upload = async (req, res) => {
 		}
 	}
 
-	// TODO: Set status
-
-	// TODO: Check Bundlr account balance
+	try {
+		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_UNWRAP_SUCCESS);
+	}
+	catch(err) {
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_UNWRAP_SUCCESS: ${err?.name}: ${err?.message}`);
+		return;
+	}
 
 	// Fund server's Bundlr Account
 	try {
