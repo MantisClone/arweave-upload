@@ -2,6 +2,7 @@ const ethers = require("ethers");
 const axios = require("axios");
 const { expect } = require("chai");
 const { getQuote, waitForUpload } = require("./test.helpers.js");
+const { Quote } = require("../app/models/quote.model.js");
 
 describe("DBS Arweave Upload", function () {
     const provider = ethers.getDefaultProvider("https://rpc-mumbai.maticvigil.com/");
@@ -65,7 +66,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data.message).contains("Allowance is less than current rate")
 
                 const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
-                expect(getStatusResponse.data.status).equals(1);
+                expect(getStatusResponse.data.status).equals(Quote.QUOTE_STATUS_WAITING);
             });
 
         });
@@ -103,7 +104,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data).equals('');
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(5);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
             });
 
             it("should respond 403 when nonce is old", async function() {
@@ -126,7 +127,7 @@ describe("DBS Arweave Upload", function () {
                 }).catch((err) => err.response);
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(5);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
                 // Attempt upload with nonce lower than previous
                 nonce = 0;
