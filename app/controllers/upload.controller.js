@@ -334,7 +334,7 @@ exports.upload = async (req, res) => {
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 	}
 	catch(err) {
-		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_START: ${err?.name}: ${err?.message}}`);
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_START: ${err?.name}: ${err?.message}`);
 		return;
 	}
 
@@ -344,12 +344,12 @@ exports.upload = async (req, res) => {
 		await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 	}
 	catch(err) {
-		console.error(`Error occurred while pulling payment from user address: ${err?.name}: ${err?.message}}`);
+		console.error(`Error occurred while pulling payment from user address: ${err?.name}: ${err?.message}`);
 		try {
 			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED);
 		}
 		catch(err) {
-			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED: ${err?.name}: ${err?.message}}`);
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED: ${err?.name}: ${err?.message}`);
 		}
 		return;
 	}
@@ -358,7 +358,7 @@ exports.upload = async (req, res) => {
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS);
 	}
 	catch(err) {
-		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS: ${err?.name}: ${err?.message}}`);
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS: ${err?.name}: ${err?.message}`);
 		return;
 	}
 
@@ -368,12 +368,12 @@ exports.upload = async (req, res) => {
 			await (await token.withdraw(priceWei)).wait(confirms);
 		}
 		catch(err) {
-			console.log(err);
+			console.error(`Error occurred while unwrapping payment: ${err?.name}: ${err?.message}`);
 			try {
-				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED);
 			}
 			catch(err) {
-				console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_FAILED}`);
+				console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED: ${err?.name}: ${err?.message}`);
 			}
 			return;
 		}
