@@ -56,11 +56,11 @@ exports.upload = async (req, res) => {
 		}
 		// TODO: validate URL format better
 		if(!files[i].startsWith('ipfs://')) {
-			errorResponse(req, res, null, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
+			errorResponse(req, res, null, 400, `Invalid protocol on index ${i}. Must be ipfs://<CID>`);
 			return;
 		}
 		if(!cidRegex.test(files[i].substring(7))) {
-			errorResponse(req, res, null, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
+			errorResponse(req, res, null, 400, `Invalid CID on index ${i}.`);
 			return;
 		}
 	}

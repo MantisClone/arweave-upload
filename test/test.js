@@ -154,7 +154,7 @@ describe("DBS Arweave Upload", function () {
                 const signature = await wallet.signMessage(message);
                 const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
                     quoteId: quote.quoteId,
-                    files: ["ipfs://Qmbadbadbadbadbadbadbadbadbadbadbadbadbadbad", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    files: ["ipfs://Qmbadbadbadbadbadbadbadbadbadbadbadbadbadbadba", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
                     nonce: nonce,
                     signature: signature,
                 });
