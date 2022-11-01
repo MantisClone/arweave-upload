@@ -2,7 +2,7 @@ const ethers = require("ethers");
 const axios = require("axios");
 const { expect } = require("chai");
 const { getQuote, waitForUpload } = require("./test.helpers.js");
-const { Quote } = require("../app/models/quote.model.js");
+const Quote = require("../app/models/quote.model.js");
 
 describe("DBS Arweave Upload", function () {
     const provider = ethers.getDefaultProvider("https://rpc-mumbai.maticvigil.com/");
