@@ -383,20 +383,18 @@ exports.upload = async (req, res) => {
 
 	// TODO: Check Bundlr account balance
 
-	// Fund our EOA's Bundlr Account
+	// Fund server's Bundlr Account
 	try {
-		let response = await bundlr.fund(bundlrPriceWei);
-		// TODO: should we record the response values?
-		/* {
-			id: '0x15d26881006589bd3ac5366ebd5031d8c14a2755d962337fad7216744fe92ed5',
-			quantity: '3802172224166296',
-			reward: '45832500525000',
-			target: '0x853758425e953739F5438fd6fd0Efe04A477b039'
-		} */
+		await bundlr.fund(bundlrPriceWei);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, "Can't fund the quote.");
-		return;
+		try {
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PUSH_FAILED);
+		}
+		catch(err) {
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PUSH_FAILED: ${err?.name}: ${err?.message}}`);
+			return;
+		}
 	}
 
 	try {
