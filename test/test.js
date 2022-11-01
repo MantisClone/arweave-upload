@@ -142,6 +142,28 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.status).equals(403);
                 expect(uploadResponse.data.message).contains("Invalid nonce");
             });
+
+            it("should fail when invalid IPFS URI", async function() {
+                const quoteResponse = await getQuote(wallet);
+                const quote = quoteResponse.data;
+
+                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+
+                const nonce = Math.floor(new Date().getTime()) / 1000;
+                const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                const signature = await wallet.signMessage(message);
+                const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://Qmdbadbadbadbadbadbadbadbadbadbadbadbadbadbad", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    nonce: nonce,
+                    signature: signature,
+                });
+                expect(uploadResponse.status).equals(200);
+                expect(uploadResponse.data).equals('');
+
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
+            });
         });
     });
 });
