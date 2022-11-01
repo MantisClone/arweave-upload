@@ -400,7 +400,6 @@ exports.upload = async (req, res) => {
 	}
 
 	try {
-		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_END);
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_START);
 	}
 	catch(err) {
