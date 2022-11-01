@@ -72,7 +72,7 @@ describe("DBS Arweave Upload", function () {
         });
 
         describe("with approval", function () {
-            const timeoutSeconds = 120;
+            const timeoutSeconds = 100;
             this.timeout(timeoutSeconds * 1000);
 
             const abi = [
@@ -108,7 +108,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("should respond 403 when nonce is old", async function() {
-                const timeoutSeconds = 120;
+                const timeoutSeconds = 100;
                 this.timeout(timeoutSeconds * 1000);
 
                 const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
