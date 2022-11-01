@@ -14,74 +14,74 @@ exports.upload = async (req, res) => {
 
 	// Validate request
 	if(!req.body) {
-		errorResponse(req, res, 400, "Content can not be empty!");
+		errorResponse(req, res, null, 400, "Content can not be empty!");
 		return;
 	}
 
 	// validate fields
 	const quoteId = req.body.quoteId;
 	if(typeof quoteId === "undefined") {
-		errorResponse(req, res, 400, "Missing quoteId.");
+		errorResponse(req, res, null, 400, "Missing quoteId.");
 		return;
 	}
 	if(typeof quoteId !== "string") {
-		errorResponse(req, res, 400, "Invalid quoteId.");
+		errorResponse(req, res, null, 400, "Invalid quoteId.");
 		return;
 	}
 
 	const files = req.body.files;
 	if(typeof files === "undefined") {
-		errorResponse(req, res, 400, "Missing files field.");
+		errorResponse(req, res, null, 400, "Missing files field.");
 		return;
 	}
 	if(typeof files !== "object" || !Array.isArray(files)) {
-		errorResponse(req, res, 400, "Invalid files field.");
+		errorResponse(req, res, null, 400, "Invalid files field.");
 		return;
 	}
 	if(files.length == 0) {
-		errorResponse(req, res, 400, "Empty files field.");
+		errorResponse(req, res, null, 400, "Empty files field.");
 		return;
 	}
 
 	if(files.length > 64) {
-		errorResponse(req, res, 400, "Too many files. Max 64.");
+		errorResponse(req, res, null, 400, "Too many files. Max 64.");
 		return;
 	}
 
 	const cidRegex = /^(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,}|F[0-9A-F]{50,})$/i;
 	for(let i = 0; i < files.length; i++) {
 		if(typeof files[i] !== "string") {
-			errorResponse(req, res, 400, `Invalid files field on index ${i}.`);
+			errorResponse(req, res, null, 400, `Invalid files field on index ${i}.`);
 			return;
 		}
 		// TODO: validate URL format better
 		if(!files[i].startsWith('ipfs://')) {
-			errorResponse(req, res, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
+			errorResponse(req, res, null, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
 			return;
 		}
 		if(!cidRegex.test(files[i].substring(7))) {
-			errorResponse(req, res, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
+			errorResponse(req, res, null, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
 			return;
 		}
 	}
 
 	const nonce = req.body.nonce;
 	if(typeof nonce === "undefined") {
-		errorResponse(req, res, 400, "Missing nonce.");
+		errorResponse(req, res, null, 400, "Missing nonce.");
 		return;
 	}
 	if(typeof nonce !== "number") {
-		errorResponse(req, res, 400, "Invalid nonce.");
+		errorResponse(req, res, null, 400, "Invalid nonce.");
 		return;
 	}
 
 	const signature = req.body.signature;
 	if(typeof signature === "undefined") {
-		errorResponse(req, res, 400, "Missing signature.");
+		errorResponse(req, res, null, 400, "Missing signature.");
 		return;
 	}
 	if(typeof signature !== "string") {
-		errorResponse(req, res, 400, "Invalid signature.");
+		errorResponse(req, res, null, 400, "Invalid signature.");
 		return;
 	}
 
@@ -90,12 +90,12 @@ exports.upload = async (req, res) => {
 	try {
 		quote = Quote.get(quoteId);
 		if(quote == undefined) {
-			errorResponse(req, res, 404, "Quote not found.");
+			errorResponse(req, res, null, 404, "Quote not found.");
 			return;
 		}
 	}
 	catch(err) {
-		errorResponse(req, res, 500, "Error occurred while validating quote.");
+		errorResponse(req, res, err, 500, "Error occurred while validating quote.");
 		return;
 	}
 
@@ -106,12 +106,12 @@ exports.upload = async (req, res) => {
 		signerAddress = ethers.utils.verifyMessage(message, signature);
 	}
 	catch(err) {
-		errorResponse(req, res, 403, "Invalid signature.");
+		errorResponse(req, res, err, 403, "Invalid signature.");
 		return;
 	}
 
 	if(signerAddress != userAddress) {
-		errorResponse(req, res, 403, "Invalid signature.");
+		errorResponse(req, res, null, 403, "Invalid signature.");
 		return;
 	}
 
@@ -120,36 +120,36 @@ exports.upload = async (req, res) => {
 		oldNonce = Nonce.get(userAddress)?.nonce || 0.0;
 	}
 	catch(err) {
-		errorResponse(req, res, 500, "Error occurred while validating nonce.");
+		errorResponse(req, res, err, 500, "Error occurred while validating nonce.");
 		return;
 	}
 	if(parseFloat(nonce) <= parseFloat(oldNonce)) {
-		errorResponse(req, res, 403, "Invalid nonce.");
+		errorResponse(req, res, null, 403, "Invalid nonce.");
 		return;
 	}
 	try {
 		Nonce.set(userAddress, nonce);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, "Error occurred while storing nonce.");
+		errorResponse(req, res, err, 500, "Error occurred while storing nonce.");
 		return;
 	}
 
 	// see if token still accepted
 	const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
 	if(!paymentToken) {
-		errorResponse(req, res, 400, "Payment token no longer accepted.");
+		errorResponse(req, res, null, 400, "Payment token no longer accepted.");
 		return;
 	}
 
 	// check status of quote
 	if(quote.status != Quote.QUOTE_STATUS_WAITING) {
 		if(quote.status == Quote.QUOTE_STATUS_UPLOAD_END) {
-			errorResponse(req, res, 400, "Quote has been completed.");
+			errorResponse(req, res, null, 400, "Quote has been completed.");
 			return;
 		}
 		else {
-			errorResponse(req, res, 400, "Quote is being processed.");
+			errorResponse(req, res, null, 400, "Quote is being processed.");
 			return;
 		}
 	}
@@ -160,7 +160,7 @@ exports.upload = async (req, res) => {
 		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 	}
 	catch(err) {
-		errorResponse(req, res, 500, err.message);
+		errorResponse(req, res, err, 500, "Unable to connect to Bundlr");
 		return;
 	}
 
@@ -171,14 +171,14 @@ exports.upload = async (req, res) => {
 		priceWei = ethers.BigNumber.from(bundlrPriceWei.toString(10));
 	}
 	catch(err) {
-		errorResponse(req, res, 500, err.message);
+		errorResponse(req, res, err, 500, "Unable to get price from Bundlr");
 		return;
 	}
 
 	const quoteTokenAmount = ethers.BigNumber.from(quote.tokenAmount);
 
 	if(priceWei.gte(quoteTokenAmount)) {
-		errorResponse(req, res, 400, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
+		errorResponse(req, res, null, 400, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
 		return;
 	}
 
@@ -247,7 +247,7 @@ exports.upload = async (req, res) => {
 	}
 	console.log(`allowance = ${allowance}`);
 	if(allowance.lt(priceWei)) {
-		errorResponse(req, res, 400, `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`);
+		errorResponse(req, res, null, 400, `Allowance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, allowance: ${allowance}`);
 		return;
 	}
 
@@ -262,7 +262,7 @@ exports.upload = async (req, res) => {
 	}
 	console.log(`userBalance = ${userBalance}`);
 	if(userBalance.lt(priceWei)) {
-		errorResponse(req, res, 400, `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`);
+		errorResponse(req, res, null, 400, `User balance is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}, userBalance: ${userBalance}`);
 		return;
 	}
 
@@ -324,7 +324,7 @@ exports.upload = async (req, res) => {
 	}
 	console.log(`feeTokenBalance = ${feeTokenBalance}`);
 	if(feeEstimate.gte(feeTokenBalance)) {
-		errorResponse(req, res, 503, `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`);
+		errorResponse(req, res, null, 503, `Estimated fees to process payment exceed fee token reserves. feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`);
 		return;
 	}
 
