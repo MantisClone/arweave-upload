@@ -394,6 +394,7 @@ exports.upload = async (req, res) => {
 		await bundlr.fund(bundlrPriceWei);
 	}
 	catch(err) {
+		console.error(`Error occurred while funding Bundlr account: ${err?.name}: ${err?.message}`);
 		try {
 			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PUSH_FAILED);
 		}
