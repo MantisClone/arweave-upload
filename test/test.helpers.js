@@ -13,6 +13,14 @@ exports.getQuote = async (wallet, size = 119762) => {
     });
 }
 
+exports.isUploadFinishedOrFailed = (status) => {
+    return (
+        (status >= Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED
+            && status < Quote.QUOTE_STATUS_UPLOAD_START)
+        || status >= Quote.QUOTE_STATUS_UPLOAD_END
+    )
+}
+
 exports.waitForUpload = async (timeoutSeconds, quoteId) => {
     let status;
     for(let i = 0; i < timeoutSeconds; i++) {
@@ -24,11 +32,3 @@ exports.waitForUpload = async (timeoutSeconds, quoteId) => {
     }
     return status;
 };
-
-exports.isUploadFinishedOrFailed = (status) => {
-    return (
-        (status >= Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED
-            && status < Quote.QUOTE_STATUS_UPLOAD_START)
-        || status >= Quote.QUOTE_STATUS_UPLOAD_END
-    )
-}
