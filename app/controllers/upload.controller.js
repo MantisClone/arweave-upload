@@ -334,7 +334,7 @@ exports.upload = async (req, res) => {
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 	}
 	catch(err) {
-		console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_START}`);
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_START: ${err?.name}: ${err?.message}}`);
 		return;
 	}
 
@@ -404,7 +404,7 @@ exports.upload = async (req, res) => {
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_START);
 	}
 	catch(err) {
-		console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_UPLOAD_START}`);
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_START: ${err?.name}: ${err?.message}}`);
 		return;
 	}
 
