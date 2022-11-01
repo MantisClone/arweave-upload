@@ -358,7 +358,7 @@ exports.upload = async (req, res) => {
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS);
 	}
 	catch(err) {
-		console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS}`);
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS: ${err?.name}: ${err?.message}}`);
 		return;
 	}
 
