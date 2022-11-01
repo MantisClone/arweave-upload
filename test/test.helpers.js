@@ -1,4 +1,5 @@
 const axios = require("axios");
+const Quote = require("../app/models/quote.model");
 
 exports.getQuote = async (wallet, size = 119762) => {
     return axios.post(`http://localhost:8081/getQuote`, {
@@ -17,8 +18,17 @@ exports.waitForUpload = async (timeoutSeconds, quoteId) => {
     for(let i = 0; i < timeoutSeconds; i++) {
         const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quoteId}`);
         status = getStatusResponse.data.status;
-        if(status >= 5) break;
+        // if 200 - 299 or 400 - 499
+        if(isUploadFinishedOrFailed(status)) break;
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
     return status;
 };
+
+exports.isUploadFinishedOrFailed = (status) => {
+    return (
+        (status >= Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED
+            && status < Quote.QUOTE_STATUS_UPLOAD_START)
+        || status >= Quote.QUOTE_STATUS_UPLOAD_END
+    )
+}
