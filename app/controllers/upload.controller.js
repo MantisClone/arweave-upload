@@ -431,7 +431,7 @@ exports.upload = async (req, res) => {
 		await axios({
 			method: "get",
 			url: ipfsFile,
-			responseType: "arraybuffer"
+			responseType: "arraybuffer"  // Download in chunks, stored in memory
 		})
 		.then(response => {
 			// download started
