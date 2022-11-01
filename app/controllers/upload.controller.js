@@ -414,12 +414,13 @@ exports.upload = async (req, res) => {
 
 	let files_uploaded = 0;
 	await Promise.all(files.map(async (file, index) => {
-		let quotedFile;
+		// Get quoted file length
+		let quotedFileLength;
 		try {
-			quotedFile = File.get(quoteId, index);
+			quotedFileLength = File.get(quoteId, index).length;
 		}
 		catch(err) {
-			console.log(err);
+			console.error(`Error occurred while reading quoted file length: ${err?.name}: ${err?.message}`);
 			return;
 		}
 
@@ -438,9 +439,9 @@ exports.upload = async (req, res) => {
 			const httpLength = parseInt(response.headers['content-length']);
 
 			if(httpLength) {
-				if(httpLength != quotedFile.length) {
+				if(httpLength != quotedFileLength) {
 					// quoted size is different than real size
-					console.log(`Different lengths, quoted length = ${quotedFile.length}, http length ${httpLength}`);
+					console.log(`Different lengths, quoted length = ${quotedFileLength}, http length ${httpLength}`);
 				}
 			}
 
