@@ -439,10 +439,13 @@ exports.upload = async (req, res) => {
 			const httpLength = parseInt(response.headers['content-length']);
 
 			if(httpLength) {
-				if(httpLength != quotedFileLength) {
-					// quoted size is different than real size
-					console.log(`Different lengths, quoted length = ${quotedFileLength}, http length ${httpLength}`);
+				if(httpLength > quotedFileLength) {
+					console.log(`IPFS file length exceeds quoted length. file index = ${index}, quoted length = ${quotedFileLength}, IPFS length ${httpLength}`);
+
 				}
+			}
+			else {
+				console.log("Warning: Unknown IPFS file length. Uploading blindly.");
 			}
 
 			let tags = [];
