@@ -493,7 +493,8 @@ exports.upload = async (req, res) => {
 			})
 			.catch(err => {
 				console.error(`Error occurred while downloading file ${file}, index ${index}: ${err?.name}: ${err?.message}`);
-				return Promise.reject(err);
+				reject(Quote.QUOTE_STATUS_UPLOAD_DOWNLOAD_FAILED);
+				return;
 			});
 		});
 	})).then(() => {

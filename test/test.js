@@ -173,7 +173,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data).equals('');
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_DOWNLOAD_FAILED);
             });
 
 
