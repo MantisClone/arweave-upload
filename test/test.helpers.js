@@ -18,7 +18,7 @@ exports.waitForUpload = async (timeoutSeconds, quoteId) => {
         const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quoteId}`);
         status = getStatusResponse.data.status;
         if(status >= 5) break;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
     }
     return status;
 };
