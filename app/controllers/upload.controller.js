@@ -484,7 +484,6 @@ exports.upload = async (req, res) => {
 				try {
 					// start upload
 					uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
-					// TODO: also hash the file
 				}
 				catch(error) {
 					console.log(error.message);

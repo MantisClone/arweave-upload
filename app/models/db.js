@@ -22,7 +22,6 @@ const create_files = `
 		"quoteId"	TEXT NOT NULL,
 		"index"	INTEGER NOT NULL,
 		"length"	INTEGER NOT NULL,
-		"hash"	TEXT,
 		"transactionHash"	TEXT,
 		FOREIGN KEY("quoteId") REFERENCES "quote"("quoteId") ON DELETE CASCADE,
 		PRIMARY KEY("quoteId","index")
