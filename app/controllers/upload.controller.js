@@ -412,7 +412,7 @@ exports.upload = async (req, res) => {
 	}
 
 	let files_uploaded = 0;
-	await Promise.all(files.map(async (file, index) => {
+	Promise.all(files.map(async (file, index) => {
 		// Get quoted file length
 		let quotedFileLength;
 		try {
@@ -433,7 +433,7 @@ exports.upload = async (req, res) => {
 		const ipfsFile = process.env.IPFS_GATEWAY + file.substring(7);
 
 		// download file
-		await axios({
+		axios({
 			method: "get",
 			url: ipfsFile,
 			responseType: "arraybuffer"  // Download in chunks, stored in memory
