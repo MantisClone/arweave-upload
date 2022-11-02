@@ -456,9 +456,6 @@ exports.upload = async (req, res) => {
 				uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288);
 				uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1);
 
-				uploader.on("chunkUpload", (chunkInfo) => {
-					//console.log(`Uploaded Chunk number ${chunkInfo.id}, offset of ${chunkInfo.offset}, size ${chunkInfo.size} Bytes, with a total of ${chunkInfo.totalUploaded} bytes uploaded.`);
-				});
 				uploader.on("chunkError", (e) => {
 					//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
 				});
