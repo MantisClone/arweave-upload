@@ -440,7 +440,7 @@ exports.upload = async (req, res) => {
 
 				if(actualLength) {
 					if(actualLength > quotedFileLength) {
-						console.error(`Actual file length exceeds quoted length. file index = ${index}, quoted length = ${quotedFileLength}, actual length ${actualLength}`);
+						console.error(`Actual file length exceeds quoted length. CID = ${file}, file index = ${index}, quoted length = ${quotedFileLength}, actual length ${actualLength}`);
 						reject(Quote.QUOTE_STATUS_UPLOAD_ACTUAL_FILE_LEN_EXCEEDS_QUOTE);
 						return;
 					}
