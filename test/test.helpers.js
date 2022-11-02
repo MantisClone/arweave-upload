@@ -22,7 +22,7 @@ exports.waitForUpload = async (timeoutSeconds, quoteId) => {
         if((status >= Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED
             && status < Quote.QUOTE_STATUS_UPLOAD_START)
         || status >= Quote.QUOTE_STATUS_UPLOAD_END) break;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
     }
     return status;
 };
