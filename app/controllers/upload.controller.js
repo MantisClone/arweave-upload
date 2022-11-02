@@ -466,7 +466,9 @@ exports.upload = async (req, res) => {
 						File.setHash(quoteId, index, transactionId);
 					}
 					catch(err) {
-						console.error(err);
+						console.error(`Error occurred while writing file transaction id to database: ${err?.name}: ${err?.message}. CID = ${file}, file index = ${index}`);
+						reject(Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR);
+						return;
 					}
 
 					// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
