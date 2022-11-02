@@ -195,13 +195,12 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data).equals('');
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(5);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
                 nonce = Math.floor(new Date().getTime()) / 1000;
                 message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
                 signature = await wallet.signMessage(message);
                 const getLinkResponse = await axios.get(`http://localhost:8081/getLink?quoteId=${quote.quoteId}&nonce=${nonce}&signature=${signature}`);
-                expect(getLinkResponse).to.exist;
                 expect(getLinkResponse.status).to.equal(200);
                 expect(getLinkResponse.data[0]).contains.all.keys(
                     "type",
