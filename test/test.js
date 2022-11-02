@@ -74,7 +74,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data.message).contains("Allowance is less than current rate")
 
                 const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
-                expect(getStatusResponse.data.status).equals(1);
+                expect(getStatusResponse.data.status).equals(Quote.QUOTE_STATUS_WAITING);
 
                 const userBalanceAfter = token.balanceOf(userWallet.address);
                 expect(userBalanceBefore).equals(userBalanceAfter);
@@ -112,7 +112,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data).equals('');
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(5);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
                 const userBalanceAfter = token.balanceOf(userWallet.address);
                 expect(userBalanceBefore - quote.tokenAmount).equals(userBalanceAfter);
@@ -173,7 +173,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data).equals('');
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR);
             });
 
 
