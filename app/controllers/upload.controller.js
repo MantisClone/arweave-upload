@@ -197,7 +197,7 @@ exports.upload = async (req, res) => {
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while establishing connection to Node RPC provider`);
+		errorResponse(req, res, err, 500, `Error occurred while establishing connection to Node RPC provider`);
 		return;
 	}
 
@@ -207,7 +207,7 @@ exports.upload = async (req, res) => {
 		wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while creating a Wallet instance.`);
+		errorResponse(req, res, err, 500, `Error occurred while creating a Wallet instance.`);
 		return;
 	}
 
@@ -228,7 +228,7 @@ exports.upload = async (req, res) => {
 	}
 	catch(err) {
 		console.error(err.message);
-		errorResponse(req, res, 500, `Error occurred while connecting to payment token contract.`);
+		errorResponse(req, res, err, 500, `Error occurred while connecting to payment token contract.`);
 		return;
 	}
 
@@ -238,7 +238,7 @@ exports.upload = async (req, res) => {
 		allowance = await token.allowance(userAddress, wallet.address);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occured while checking allowance.`);
+		errorResponse(req, res, err, 500, `Error occured while checking allowance.`);
 		return;
 	}
 	console.log(`allowance = ${allowance}`);
@@ -253,7 +253,7 @@ exports.upload = async (req, res) => {
 		userBalance = await token.balanceOf(userAddress);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while checking user token balance.`);
+		errorResponse(req, res, err, 500, `Error occurred while checking user token balance.`);
 		return;
 	}
 	console.log(`userBalance = ${userBalance}`);
@@ -302,7 +302,7 @@ exports.upload = async (req, res) => {
 		feeData = await provider.getFeeData();
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while getting fee data.`);
+		errorResponse(req, res, err, 500, `Error occurred while getting fee data.`);
 		return;
 	}
 	// Assume all payment chains support EIP-1559 transactions.
