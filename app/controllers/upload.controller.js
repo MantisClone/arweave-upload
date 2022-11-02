@@ -452,12 +452,13 @@ exports.upload = async (req, res) => {
 				const arweaveTags = contentType ? [{name: "Content-Type", value: contentType}] : [];
 
 				const uploader = bundlr.uploader.chunkedUploader;
-
 				uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288);
 				uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1);
 
 				uploader.on("chunkError", (e) => {
-					//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
+					console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}. CID = ${file}, file index = ${index}`);
+					reject(Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED);
+					return;
 				});
 				uploader.on("done", async (finishRes) => {
 					const transactionId = finishRes.data.id;
