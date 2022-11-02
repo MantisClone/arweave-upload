@@ -16,6 +16,9 @@ export SQLITE_DB_PATH=/path/to/db/file
 export REGISTRATION_INTERVAL=30000 # default: 30000 ms
 export DBS_URI="https://localhost" # "DEBUG" to skip registration
 export SELF_URI="https://localhost"
+export IPFS_GATEWAY="https://cloudflare-ipfs.com/ipfs/" # should have trailing slash
+export ARWEAVE_GATEWAY="https://arweave.net/" # should have trailing slash
+export MAX_UPLOAD_SIZE=1099511627776 # in bytes
 
 npm start
 ```

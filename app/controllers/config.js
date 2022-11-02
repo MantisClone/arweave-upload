@@ -120,6 +120,62 @@ const checkConfig = () => {
 		return false;
 	}
 
+	const ipfsUri = process.env.IPFS_GATEWAY;
+	if(ipfsUri == null) {
+		console.log("IPFS_GATEWAY environment variable not set");
+		return false;
+	}
+	try {
+		const ipfsUrl = new URL(ipfsUri);
+		if(ipfsUrl.protocol != "http:" && ipfsUrl.protocol != "https:") {
+			console.log("IPFS_GATEWAY should be http or https");
+			return false;
+		}
+	}
+	catch(err) {
+		console.log("IPFS_GATEWAY is invalid");
+		return false;
+	}
+
+	const arweaveUri = process.env.ARWEAVE_GATEWAY;
+	if(arweaveUri == null) {
+		console.log("ARWEAVE_GATEWAY environment variable not set");
+		return false;
+	}
+	try {
+		const arweaveUrl = new URL(arweaveUri);
+		if(arweaveUrl.protocol != "http:" && arweaveUrl.protocol != "https:") {
+			console.log("ARWEAVE_GATEWAY should be http or https");
+			return false;
+		}
+	}
+	catch(err) {
+		console.log("ARWEAVE_GATEWAY is invalid");
+		return false;
+	}
+
+	const bundlrBatchSize = process.env.BUNDLR_BATCH_SIZE;
+	if(bundlrBatchSize != null && isNaN(bundlrBatchSize)) {
+		console.log("BUNDLR_BATCH_SIZE environment variable should be a number");
+		return false;
+	}
+
+	const bundlrChunkSize = process.env.BUNDLR_CHUNK_SIZE;
+	if(bundlrChunkSize != null && isNaN(bundlrChunkSize)) {
+		console.log("BUNDLR_CHUNK_SIZE environment variable should be a number");
+		return false;
+	}
+
+	const maxUploadSize = process.env.MAX_UPLOAD_SIZE;
+	if(maxUploadSize == null) {
+		console.log("MAX_UPLOAD_SIZE environment variable not set");
+		return false;
+	}
+	if(isNaN(maxUploadSize)) {
+		console.log("MAX_UPLOAD_SIZE environment variable should be a number, in bytes");
+		return false;
+	}
+
 	return true;
 };
 

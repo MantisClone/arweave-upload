@@ -431,8 +431,7 @@ exports.upload = async (req, res) => {
 			return Promise.reject(err);
 		}
 
-		// TODO: get IPFS gateway from config
-		const ipfsFile = `https://cloudflare-ipfs.com/ipfs/${file.substring(7)}`;
+		const ipfsFile = process.env.IPFS_GATEWAY + file.substring(7);
 
 		// download file
 		await axios({
@@ -463,8 +462,8 @@ exports.upload = async (req, res) => {
 
 			const uploader = bundlr.uploader.chunkedUploader;
 
-			uploader.setChunkSize(524288);
-			uploader.setBatchSize(1);
+			uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288);
+			uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1);
 
 			uploader.on("chunkUpload", (chunkInfo) => {
 				//console.log(`Uploaded Chunk number ${chunkInfo.id}, offset of ${chunkInfo.offset}, size ${chunkInfo.size} Bytes, with a total of ${chunkInfo.totalUploaded} bytes uploaded.`);
@@ -483,7 +482,7 @@ exports.upload = async (req, res) => {
 
 				// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
 				try {
-					axios.head(`https://arweave.net/${transactionId}`);
+					axios.head(process.env.ARWEAVE_GATEWAY + transactionId);
 
 					files_uploaded = files_uploaded + 1;
 					if(files_uploaded == files.length) {
