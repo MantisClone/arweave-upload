@@ -180,6 +180,10 @@ describe("DBS Arweave Upload", function () {
                 const getLinkResponse = await axios.get(`http://localhost:8081/getLink?quoteId=${quote.quoteId}&nonce=${nonce}&signature=${signature}`);
                 expect(getLinkResponse).to.exist;
                 expect(getLinkResponse.status).to.equal(200);
+                expect(getLinkResponse.data).contains.all.keys(
+                    "type",
+                    "transactionHash"
+                );
             });
         });
     });
