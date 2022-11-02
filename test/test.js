@@ -75,6 +75,9 @@ describe("DBS Arweave Upload", function () {
 
                 const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
                 expect(getStatusResponse.data.status).equals(1);
+
+                const userBalanceAfter = token.balanceOf(userWallet.address);
+                expect(userBalanceBefore).equals(userBalanceAfter);
             });
 
         });
@@ -151,15 +154,15 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data.message).contains("Invalid nonce");
             });
 
-            it("should fail when invalid IPFS URI", async function() {
-                const quoteResponse = await getQuote(wallet);
+            it("upload, with approval, should fail when invalid IPFS URI", async function() {
+                const quoteResponse = await getQuote(userWallet);
                 const quote = quoteResponse.data;
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
-                const signature = await wallet.signMessage(message);
+                const signature = await userWallet.signMessage(message);
                 const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
                     quoteId: quote.quoteId,
                     files: ["ipfs://Qmbadbadbadbadbadbadbadbadbadbadbadbadbadbadba", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
@@ -173,7 +176,8 @@ describe("DBS Arweave Upload", function () {
                 expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
             });
 
-            it("should upload and get link", async function() {
+
+            it("getLink, after successful upload, should return a list of transaction IDs", async function() {
                 const timeoutSeconds = 120;
                 this.timeout(timeoutSeconds * 1000);
 
