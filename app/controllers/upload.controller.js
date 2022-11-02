@@ -411,7 +411,6 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	let files_uploaded = 0;
 	Promise.all(files.map((file, index) => {
 		return new Promise(async (resolve, reject) => {
 			// Get quoted file length
@@ -433,10 +432,10 @@ exports.upload = async (req, res) => {
 				url: ipfsFile,
 				responseType: "arraybuffer"  // Download in chunks, stored in memory
 			})
-			.then(response => {
+			.then(async res => {
 				// download started
-				const contentType = response.headers['content-type'];
-				const actualLength = parseInt(response.headers['content-length']);
+				const contentType = res.headers['content-type'];
+				const actualLength = parseInt(res.headers['content-length']);
 
 				if(actualLength) {
 					if(actualLength > quotedFileLength) {
@@ -483,18 +482,13 @@ exports.upload = async (req, res) => {
 				const transactionOptions = {tags: arweaveTags};
 				try {
 					// Download each chunk and immediately upload to Bundlr without storing to disk.
-					uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
+					await uploader.uploadData(Buffer.from(res.data, "binary"), transactionOptions);
 				}
-				catch(error) {
-					console.log(error.message);
-					// TODO: Revisit this status code and consider changing to something unique
-					// TODO: Add separate status for insufficient funds, upload fail, etc.
-					try {
-						Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
-					}
-					catch(err) {
-						console.error(err);
-					}
+				catch(err) {
+					console.error(`Error occurred while uploading file: ${err?.name}: ${err?.message}. CID = ${file}, file index = ${index}`);
+					// TODO: Consider separate status for insufficient funds.
+					reject(Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED);
+					return;
 				}
 			})
 			.catch(err => {
