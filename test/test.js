@@ -56,7 +56,7 @@ describe("DBS Arweave Upload", function () {
             it("upload, without approval, should fail to pull funds from user account", async function() {
                 this.timeout(20 * 1000);
 
-                const userBalanceBefore = token.balanceOf(userWallet.address);
+                const userBalanceBefore = await token.balanceOf(userWallet.address);
 
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
@@ -76,7 +76,7 @@ describe("DBS Arweave Upload", function () {
                 const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
                 expect(getStatusResponse.data.status).equals(Quote.QUOTE_STATUS_WAITING);
 
-                const userBalanceAfter = token.balanceOf(userWallet.address);
+                const userBalanceAfter = await token.balanceOf(userWallet.address);
                 expect(userBalanceBefore).equals(userBalanceAfter);
             });
 
@@ -92,7 +92,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should successfully pull funds from user account", async function() {
-                const userBalanceBefore = token.balanceOf(userWallet.address);
+                const userBalanceBefore = await token.balanceOf(userWallet.address);
 
                 const quoteResponse = await getQuote(userWallet);
                 const quote = quoteResponse.data;
@@ -114,7 +114,7 @@ describe("DBS Arweave Upload", function () {
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
                 expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
-                const userBalanceAfter = token.balanceOf(userWallet.address);
+                const userBalanceAfter = await token.balanceOf(userWallet.address);
                 expect(userBalanceBefore - quote.tokenAmount).equals(userBalanceAfter);
             });
 
