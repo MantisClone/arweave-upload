@@ -285,7 +285,7 @@ exports.upload = async (req, res) => {
 		transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while estimating gas costs for upload.`);
+		errorResponse(req, res, err, 500, `Error occurred while estimating gas costs for upload.`);
 		return;
 	}
 	console.log(`transferFromEstimate = ${transferFromEstimate}`);

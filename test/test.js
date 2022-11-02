@@ -141,6 +141,50 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.status).equals(403);
                 expect(uploadResponse.data.message).contains("Invalid nonce");
             });
+
+            it("should upload and get link", async function() {
+                const timeoutSeconds = 120;
+                this.timeout(timeoutSeconds * 1000);
+
+                const getQuoteResponse = await getQuote(wallet).catch((err) => err.response);
+                const quote = getQuoteResponse.data;
+                expect(getQuoteResponse.status).equals(200);
+                expect(quote).contains.all.keys(
+                    "quoteId",
+                    "chainId",
+                    "tokenAddress",
+                    "tokenAmount",
+                    "approveAddress"
+                );
+
+                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+
+                let nonce = Math.floor(new Date().getTime()) / 1000;
+                let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                let signature = await wallet.signMessage(message);
+                const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    nonce: nonce,
+                    signature: signature,
+                }).catch((err) => err.response);
+                expect(uploadResponse.status).equals(200);
+                expect(uploadResponse.data).equals('');
+
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
+                expect(status).equals(5);
+
+                nonce = Math.floor(new Date().getTime()) / 1000;
+                message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                signature = await wallet.signMessage(message);
+                const getLinkResponse = await axios.get(`http://localhost:8081/getLink?quoteId=${quote.quoteId}&nonce=${nonce}&signature=${signature}`);
+                expect(getLinkResponse).to.exist;
+                expect(getLinkResponse.status).to.equal(200);
+                expect(getLinkResponse.data[0]).contains.all.keys(
+                    "type",
+                    "transactionHash"
+                );
+            });
         });
     });
 });

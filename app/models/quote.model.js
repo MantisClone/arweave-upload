@@ -79,7 +79,7 @@ Quote.setStatus = (quoteId, status) => {
 };
 
 Quote.getLink = (quoteId) => {
-	const query = `SELECT "arweave" AS "type", transactionHash
+	const query = `SELECT 'arweave' AS 'type', transactionHash
 		FROM files
 		WHERE quoteId = ?
 		ORDER BY "index" ASC;`;
