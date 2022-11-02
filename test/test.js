@@ -115,7 +115,7 @@ describe("DBS Arweave Upload", function () {
                 expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
                 const userBalanceAfter = await token.balanceOf(userWallet.address);
-                expect((userBalanceBefore - quote.tokenAmount).eq(userBalanceAfter)).to.be.true;
+                expect(userBalanceBefore.sub(quote.tokenAmount).eq(userBalanceAfter)).to.be.true;
             });
 
             it("upload, with approval, should respond 403 when nonce is old", async function() {
