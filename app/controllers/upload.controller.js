@@ -412,116 +412,109 @@ exports.upload = async (req, res) => {
 	}
 
 	let files_uploaded = 0;
-	Promise.all(files.map(async (file, index) => {
-		// Get quoted file length
-		let quotedFileLength;
-		try {
-			quotedFileLength = File.get(quoteId, index).length;
-		}
-		catch(err) {
-			console.error(`Error occurred while reading quoted file length: ${err?.name}: ${err?.message}`);
+	Promise.all(files.map((file, index) => {
+		return new Promise((resolve, reject) => {
+			// Get quoted file length
+			let quotedFileLength;
 			try {
-				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR);
+				quotedFileLength = File.get(quoteId, index).length;
 			}
 			catch(err) {
-				console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR: ${err?.name}: ${err?.message}}`);
-				return Promise.reject(err);
-			}
-			return Promise.reject(err);
-		}
-
-		const ipfsFile = process.env.IPFS_GATEWAY + file.substring(7);
-
-		// download file
-		axios({
-			method: "get",
-			url: ipfsFile,
-			responseType: "arraybuffer"  // Download in chunks, stored in memory
-		})
-		.then(response => {
-			// download started
-			const contentType = response.headers['content-type'];
-			const actualLength = parseInt(response.headers['content-length']);
-
-			if(actualLength) {
-				if(actualLength > quotedFileLength) {
-					console.log(`Actual file length exceeds quoted length. file index = ${index}, quoted length = ${quotedFileLength}, actual length ${actualLength}`);
-
-				}
-			}
-			else {
-				console.log("Warning: Unknown file length. Uploading blindly.");
+				console.error(`Error occurred while reading quoted file length from database: ${err?.name}: ${err?.message}`);
+				reject(Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR);
+				return;
 			}
 
-			let tags = [];
-			if(contentType) {
-				// TODO: sanitize contentType
-				tags = [{name: "Content-Type", value: contentType}];
-			}
+			const ipfsFile = process.env.IPFS_GATEWAY + file.substring(7);
 
-			const uploader = bundlr.uploader.chunkedUploader;
+			// download file
+			axios({
+				method: "get",
+				url: ipfsFile,
+				responseType: "arraybuffer"  // Download in chunks, stored in memory
+			})
+			.then(response => {
+				// download started
+				const contentType = response.headers['content-type'];
+				const actualLength = parseInt(response.headers['content-length']);
 
-			uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288);
-			uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1);
-
-			uploader.on("chunkUpload", (chunkInfo) => {
-				//console.log(`Uploaded Chunk number ${chunkInfo.id}, offset of ${chunkInfo.offset}, size ${chunkInfo.size} Bytes, with a total of ${chunkInfo.totalUploaded} bytes uploaded.`);
-			});
-			uploader.on("chunkError", (e) => {
-				//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
-			});
-			uploader.on("done", async (finishRes) => {
-				const transactionId = finishRes.data.id;
-				try {
-					File.setHash(quoteId, index, transactionId);
-				}
-				catch(err) {
-					console.error(err);
-				}
-
-				// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
-				try {
-					axios.head(process.env.ARWEAVE_GATEWAY + transactionId);
-
-					files_uploaded = files_uploaded + 1;
-					if(files_uploaded == files.length) {
-						try {
-							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
-						}
-						catch(err) {
-							console.error(err);
-						}
+				if(actualLength) {
+					if(actualLength > quotedFileLength) {
+						console.error(`Actual file length exceeds quoted length. file index = ${index}, quoted length = ${quotedFileLength}, actual length ${actualLength}`);
+						reject(Quote.QUOTE_STATUS_UPLOAD_ACTUAL_FILE_LEN_EXCEEDS_QUOTE);
+						return;
 					}
 				}
-				catch(err) {
-					// transactionId not found
-					console.log(`Unable to retreive uploaded file with transaction id ${transactionId}, error: ${err.response.status}`);
+				else {
+					console.warn("Warning: Unknown file length. Uploading blindly.");
 				}
-			});
 
-			const transactionOptions = {tags: tags};
-			try {
-				// start upload
-				uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
-				// TODO: also hash the file
-			}
-			catch(error) {
-				console.log(error.message);
-				// TODO: Revisit this status code and consider changing to something unique
-				// TODO: Add separate status for insufficient funds, upload fail, etc.
+				const arweaveTags = contentType ? [{name: "Content-Type", value: contentType}] : [];
+
+				const uploader = bundlr.uploader.chunkedUploader;
+
+				uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288);
+				uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1);
+
+				uploader.on("chunkUpload", (chunkInfo) => {
+					//console.log(`Uploaded Chunk number ${chunkInfo.id}, offset of ${chunkInfo.offset}, size ${chunkInfo.size} Bytes, with a total of ${chunkInfo.totalUploaded} bytes uploaded.`);
+				});
+				uploader.on("chunkError", (e) => {
+					//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
+				});
+				uploader.on("done", async (finishRes) => {
+					const transactionId = finishRes.data.id;
+					try {
+						File.setHash(quoteId, index, transactionId);
+					}
+					catch(err) {
+						console.error(err);
+					}
+
+					// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
+					try {
+						axios.head(process.env.ARWEAVE_GATEWAY + transactionId);
+
+						files_uploaded = files_uploaded + 1;
+						if(files_uploaded == files.length) {
+							try {
+								Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+							}
+							catch(err) {
+								console.error(err);
+							}
+						}
+					}
+					catch(err) {
+						// transactionId not found
+						console.log(`Unable to retreive uploaded file with transaction id ${transactionId}, error: ${err.response.status}`);
+					}
+				});
+
+				const transactionOptions = {tags: arweaveTags};
 				try {
-					Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+					// start upload
+					uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
+					// TODO: also hash the file
 				}
-				catch(err) {
-					console.error(err);
+				catch(error) {
+					console.log(error.message);
+					// TODO: Revisit this status code and consider changing to something unique
+					// TODO: Add separate status for insufficient funds, upload fail, etc.
+					try {
+						Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+					}
+					catch(err) {
+						console.error(err);
+					}
 				}
-			}
-		})
-		.catch(err => {
-			console.error(`Error occurred while downloading file ${file}, index ${index}: ${err?.name}: ${err?.message}`);
-			return Promise.reject(err);
+			})
+			.catch(err => {
+				console.error(`Error occurred while downloading file ${file}, index ${index}: ${err?.name}: ${err?.message}`);
+				return Promise.reject(err);
+			});
 		});
-	})).then((values) => {
+	})).then(() => {
 		try {
 			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
 		}
@@ -529,13 +522,12 @@ exports.upload = async (req, res) => {
 			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_END: ${err?.name}: ${err?.message}}`);
 			return;
 		}
-	}).catch(err => {
-		console.error(`Error occurred while uploading file(s): ${err?.name}: ${err?.message}`);
+	}).catch(quoteStatus => {
 		try {
-			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED);
+			Quote.setStatus(quoteId, quoteStatus);
 		}
 		catch(err) {
-			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED: ${err?.name}: ${err?.message}}`);
+			console.error(`Error occurred while setting status to ${quoteStatus}: ${err?.name}: ${err?.message}}`);
 			return;
 		}
 	});
