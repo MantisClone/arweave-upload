@@ -420,7 +420,7 @@ exports.upload = async (req, res) => {
 				quotedFileLength = File.get(quoteId, index).length;
 			}
 			catch(err) {
-				console.error(`Error occurred while reading quoted file length from database: ${err?.name}: ${err?.message}`);
+				console.error(`Error occurred while reading quoted file length from database: ${err?.name}: ${err?.message}. CID = ${file}, file index = ${index}`);
 				reject(Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR);
 				return;
 			}
