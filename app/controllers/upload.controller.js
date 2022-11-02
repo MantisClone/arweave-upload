@@ -6,7 +6,6 @@ const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
-const { QUOTE_STATUS_PAYMENT_FAILED } = require("../models/quote.model.js");
 const { errorResponse } = require("./error.js");
 
 exports.upload = async (req, res) => {
