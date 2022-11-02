@@ -42,7 +42,7 @@ describe("DBS Arweave Upload", function () {
         });
     });
 
-    describe("upload", function () {
+    describe("Integration tests", function () {
 
         const abi = [
             'function approve(address, uint256) external returns (bool)',
@@ -153,7 +153,7 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data.message).contains("Invalid nonce");
             });
 
-            it("should upload and get link", async function() {
+            it("getLink, after successful upload, should return a list of transaction IDs", async function() {
                 const timeoutSeconds = 120;
                 this.timeout(timeoutSeconds * 1000);
 
