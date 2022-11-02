@@ -155,6 +155,9 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should fail when invalid IPFS URI", async function() {
+                const timeoutSeconds = 150;
+                this.timeout(timeoutSeconds * 1000);
+
                 const quoteResponse = await getQuote(userWallet);
                 const quote = quoteResponse.data;
 
@@ -178,9 +181,6 @@ describe("DBS Arweave Upload", function () {
 
 
             it("getLink, after successful upload, should return a list of transaction IDs", async function() {
-                const timeoutSeconds = 120;
-                this.timeout(timeoutSeconds * 1000);
-
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
                 expect(getQuoteResponse.status).equals(200);
