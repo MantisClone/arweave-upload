@@ -452,8 +452,8 @@ exports.upload = async (req, res) => {
 				const arweaveTags = contentType ? [{name: "Content-Type", value: contentType}] : [];
 
 				const uploader = bundlr.uploader.chunkedUploader;
-				uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288);
-				uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1);
+				uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288); // Default: 512 kB
+				uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1); // Default: 1 chunk at a time
 
 				uploader.on("chunkError", (e) => {
 					console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}. CID = ${file}, file index = ${index}`);
@@ -482,7 +482,7 @@ exports.upload = async (req, res) => {
 
 				const transactionOptions = {tags: arweaveTags};
 				try {
-					// start upload
+					// Download each chunk and immediately upload to Bundlr without storing to disk.
 					uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
 				}
 				catch(error) {
