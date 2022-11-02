@@ -471,9 +471,12 @@ exports.upload = async (req, res) => {
 					}
 
 					// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
-					await axios.head(process.env.ARWEAVE_GATEWAY + transactionId, {timeout: 1000}).catch((err) => {
+					try {
+						await axios.head(process.env.ARWEAVE_GATEWAY + transactionId, {timeout: 1000});
+					}
+					catch(err) {
 						console.warn(`Unable to verify file via Arweave gateway. transaction id: ${transactionId}, error: ${err.response.status}`);
-					});
+					}
 
 					resolve(transactionId);
 					return;
