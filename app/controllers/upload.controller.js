@@ -413,7 +413,7 @@ exports.upload = async (req, res) => {
 
 	let files_uploaded = 0;
 	Promise.all(files.map((file, index) => {
-		return new Promise((resolve, reject) => {
+		return new Promise(async (resolve, reject) => {
 			// Get quoted file length
 			let quotedFileLength;
 			try {
@@ -428,7 +428,7 @@ exports.upload = async (req, res) => {
 			const ipfsFile = process.env.IPFS_GATEWAY + file.substring(7);
 
 			// download file
-			axios({
+			await axios({
 				method: "get",
 				url: ipfsFile,
 				responseType: "arraybuffer"  // Download in chunks, stored in memory
@@ -472,23 +472,12 @@ exports.upload = async (req, res) => {
 					}
 
 					// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
-					try {
-						axios.head(process.env.ARWEAVE_GATEWAY + transactionId);
+					await axios.head(process.env.ARWEAVE_GATEWAY + transactionId, {timeout: 1000}).catch((err) => {
+						console.warn(`Unable to verify file via Arweave gateway. transaction id: ${transactionId}, error: ${err.response.status}`);
+					});
 
-						files_uploaded = files_uploaded + 1;
-						if(files_uploaded == files.length) {
-							try {
-								Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
-							}
-							catch(err) {
-								console.error(err);
-							}
-						}
-					}
-					catch(err) {
-						// transactionId not found
-						console.log(`Unable to retreive uploaded file with transaction id ${transactionId}, error: ${err.response.status}`);
-					}
+					resolve(transactionId);
+					return;
 				});
 
 				const transactionOptions = {tags: arweaveTags};
