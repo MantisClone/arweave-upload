@@ -46,5 +46,8 @@ jobs:
         REGISTRATION_INTERVAL: 300000
         DBS_URI: DEBUG
         SELF_URI: https://localhost
+        IPFS_GATEWAY: https://cloudflare-ipfs.com/ipfs/
+        ARWEAVE_GATEWAY: https://arweave.net/
+        MAX_UPLOAD_SIZE: 1099511627776
         # Test env var
         TEST_PRIVATE_KEY: ${{ secrets.TEST_PRIVATE_KEY }}
