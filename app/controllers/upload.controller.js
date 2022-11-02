@@ -521,5 +521,22 @@ exports.upload = async (req, res) => {
 			console.error(`Error occurred while downloading file ${file}, index ${index}: ${err?.name}: ${err?.message}`);
 			return Promise.reject(err);
 		});
-	}));
+	})).then((values) => {
+		try {
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+		}
+		catch(err) {
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_END: ${err?.name}: ${err?.message}}`);
+			return;
+		}
+	}).catch(err => {
+		console.error(`Error occurred while uploading file(s): ${err?.name}: ${err?.message}`);
+		try {
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED);
+		}
+		catch(err) {
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED: ${err?.name}: ${err?.message}}`);
+			return;
+		}
+	});
 };
