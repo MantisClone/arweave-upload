@@ -31,30 +31,55 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 
     // Estimate gas costs for full upload process
     let transferFromEstimate;
-    let unwrapEstimate;
-    let sendEthEstimate
-    let wrapEstimate;
-    let transferEstimate;
     try {
-        // 1. Pull ERC-20 token from userAddress
         transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
-        console.log(`transferFromEstimate = ${transferFromEstimate}`);
-        // 2. Unwrap if necessary
-        unwrapEstimate = await token.estimateGas.withdraw(priceWei);
-        console.log(`unwrapEstimate = ${unwrapEstimate}`);
-        // 3. Push funds to Bundlr account
-        sendEthEstimate = await wallet.estimateGas({to: bundlrAddress, value: priceWei}); // Assume price not dependent on "to" address
-        console.log(`sendEthEstimate = ${sendEthEstimate}`);
-        // 4. Possibly refund in case of non-recoverable failure
-        wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
-        console.log(`wrapEstimate = ${wrapEstimate}`);
-        transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
-        console.log(`transferEstimate = ${transferEstimate}`);
     }
     catch(err) {
-        console.log(`Error occurred while estimating gas costs for upload. ${err.name}: ${err.message}`);
+        console.log(`Error occurred while estimating transferFrom gas cost. ${err.name}: ${err.message}`);
         return;
     }
+    console.log(`transferFromEstimate = ${transferFromEstimate}`);
+
+
+    let unwrapEstimate;
+    try {
+        unwrapEstimate = await token.estimateGas.withdraw(priceWei);
+    }
+    catch(err) {
+        console.log(`Error occurred while estimating withdraw gas cost. ${err.name}: ${err.message}`);
+        return;
+    }
+    console.log(`unwrapEstimate = ${unwrapEstimate}`);
+
+    let sendEthEstimate
+    try {
+        sendEthEstimate = await wallet.estimateGas({to: bundlrAddress, value: priceWei}); // Assume price not dependent on "to" address
+    }
+    catch(err) {
+        console.log(`Error occurred while estimating send ETH gas cost. ${err.name}: ${err.message}`);
+        return;
+    }
+    console.log(`sendEthEstimate = ${sendEthEstimate}`);
+
+    let wrapEstimate;
+    try {
+        wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
+    }
+    catch(err) {
+        console.log(`Error occurred while estimating deposit gas cost. ${err.name}: ${err.message}`);
+        return;
+    }
+    console.log(`wrapEstimate = ${wrapEstimate}`);
+
+    let transferEstimate;
+    try {
+        transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
+    }
+    catch(err) {
+        console.log(`Error occurred while estimating transfer gas cost. ${err.name}: ${err.message}`);
+        return;
+    }
+    console.log(`transferEstimate = ${transferEstimate}`);
 
     let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate).add(unwrapEstimate).add(wrapEstimate);
     console.log(`gasEstimate = ${gasEstimate}`);
