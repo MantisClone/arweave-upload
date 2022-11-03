@@ -116,9 +116,9 @@ describe("DBS Arweave Upload", function () {
                 expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
                 const userBalanceAfter = await token.balanceOf(userWallet.address);
-                console.log(`userBalanceBefore = ${ethers.formatEther(userBalanceBefore)}`);
-                console.log(`quote.tokenAmount = ${ethers.formatEther(quote.tokenAmount)}`);
-                console.log(`userBalanceAfter = ${ethers.formatEther(userBalanceAfter)}`);
+                console.log(`userBalanceBefore = ${ethers.utils.formatEther(userBalanceBefore)}`);
+                console.log(`quote.tokenAmount = ${ethers.utils.formatEther(quote.tokenAmount)}`);
+                console.log(`userBalanceAfter = ${ethers.utils.formatEther(userBalanceAfter)}`);
                 expect(userBalanceBefore.sub(quote.tokenAmount).eq(userBalanceAfter)).to.be.true;
             });
 
