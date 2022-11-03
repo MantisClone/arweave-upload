@@ -273,6 +273,7 @@ exports.upload = async (req, res) => {
 		// 2. Unwrap if necessary
 		unwrapEstimate = await token.estimateGas.withdraw(priceWei);
 		// 3. Push funds to Bundlr account
+		// TODO: Move this to `token` struct in token.js
 		const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
 		sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei}); // Assume price not dependent on "to" address
 		// 4. Possibly refund in case of non-recoverable failure
@@ -288,7 +289,6 @@ exports.upload = async (req, res) => {
 	console.log(`sendEthEstimate = ${sendEthEstimate}`);
 	console.log(`wrapEstimate = ${wrapEstimate}`);
 	console.log(`transferEstimate = ${transferEstimate}`);
-
 
 	let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
 	if(paymentToken.wrappedAddress) {
