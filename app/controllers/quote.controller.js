@@ -203,6 +203,26 @@ exports.create = async (req, res) => {
 		return;
 	}
 
+	// Check server fee token balance exeeds fee estimate
+	let feeTokenBalance;
+	try {
+		feeTokenBalance = await wallet.getBalance();
+	}
+	catch(err) {
+		errorResponse(req, res, err, 500, `Error occurred while getting server fee token balance.`);
+		return;
+	}
+	console.log(`feeTokenBalance = ${feeTokenBalance}`);
+	if(feeEstimate.gte(feeTokenBalance)) {
+		errorResponse(
+			req,
+			res,
+			`Estimated fees exceed server native fee token reserves. feeTokenSymbol: ${paymentToken.symbol} feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`,
+			503,
+			`Server is unable to process payments at this time. Please try again later.`);
+		return;
+	}
+
 	let feeData;
 	try {
 		feeData = await provider.getFeeData();
