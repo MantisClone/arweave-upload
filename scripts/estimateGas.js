@@ -146,16 +146,18 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
         console.log(`Error occurred while revoking approval. ${err?.name}: ${err?.message}`)
         return;
     }
+
+    console.log("");
 }
 
-(() => {
-    tokens.forEach(async (token) => {
-        if([5].includes(token.chainId)) {
+(async () => {
+    for(let i = 0; i < tokens.length; i++) {
+        if([80001, 5].includes(tokens[i].chainId)) {
             await estimateGas(
-                token.providerUrl,
-                token.wrappedAddress,
+                tokens[i].providerUrl,
+                tokens[i].wrappedAddress,
                 '0x853758425e953739F5438fd6fd0Efe04A477b039'
             );
         }
-    })
+    }
 })();
