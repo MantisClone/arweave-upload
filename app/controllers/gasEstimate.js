@@ -1,3 +1,4 @@
+const ethers = require('ethers');
 
 /**
  * Sum of gas estimates for:
@@ -10,6 +11,6 @@
  * This number empirically derived from:
  * https://github.com/MantisClone/arweave-upload/blob/c119111744c69658af33067cde53147087340978/scripts/estimateGas.js
  */
-const gasEstimate = 158751;
+const gasEstimate = ethers.BigNumber.from(158751);
 
 module.exports = { gasEstimate };
