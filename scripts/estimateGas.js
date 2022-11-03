@@ -24,6 +24,8 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     // Create payment token contract handle
     const abi = [
         'function transferFrom(address from, address to, uint256 value) external returns (bool)',
+        'function approve(address, uint256) external returns (bool)',
+        'function balanceOf(address owner) external view returns (uint256)',
         'function deposit(uint256 value) external',
         'function withdraw(uint256 value) external',
         'function transfer(address to, uint256 value) external returns (bool)'
@@ -33,6 +35,21 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 
     // Grant infinite approval
     await (await token.approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
+
+	// Check that user has sufficient funds
+	let userBalance;
+	try {
+		userBalance = await token.balanceOf(userAddress);
+	}
+	catch(err) {
+		console.log(`Error occurred while checking user token balance. ${err.name}: ${err.message}`);
+		return;
+	}
+	console.log(`userBalance = ${userBalance}`);
+	if(userBalance.lt(priceWei)) {
+		console.log(`User balance is less than current price. current price: ${priceWei}, userBalance: ${userBalance}`);
+		return;
+	}
 
     // Estimate gas costs for full upload process
     let transferFromEstimate;
