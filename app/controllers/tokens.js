@@ -9,7 +9,8 @@ const tokens =[
 	{bundlrName: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7", symbol: "ETH", providerUrl: "https://mainnet.boba.network/", confirms: 1},
 	{bundlrName: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA", providerUrl: "https://mainnet.boba.network/", wrappedAddress: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000", confirms: 1},
 	// Testnets, used with devnet Bundlr URI. See for details: https://docs.bundlr.network/docs/devnet
-	{bundlrName: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", symbol: "MATIC", providerUrl: "https://rpc-mumbai.maticvigil.com/", wrappedAddress: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", confirms: 1}
+	{bundlrName: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", symbol: "MATIC", providerUrl: "https://rpc-mumbai.maticvigil.com/", wrappedAddress: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", confirms: 1},
+	{bundlrName: "ethereum", chainId: 5, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://goerli.infura.io/v3/", wrappedAddress: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", confirms: 1}
 ];
 
 acceptToken = (chainId, tokenAddress) => {
