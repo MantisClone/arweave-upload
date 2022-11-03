@@ -49,6 +49,7 @@ describe("DBS Arweave Upload", function () {
             'function approve(address, uint256) external returns (bool)',
             'function balanceOf(address owner) external view returns (uint256)'
         ];
+        // WMATIC on Mumbai (Polygon Testnet): https://mumbai.polygonscan.com/token/0x9c3c9283d3e44854697cd22d3faa240cfb032889
         const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, userWallet);
 
         describe("without approval", function () {
