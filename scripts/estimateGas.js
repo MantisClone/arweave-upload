@@ -3,11 +3,10 @@ const { tokens } = require('../app/controllers/tokens.js');
 
 /**
 Print gas estimates for uploading a file to Arweave
-Export PRIVATE_KEY before running
+Export PRIVATE_KEY and TEST_PRIVATE_KEY before running
  */
 async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 
-    const userAddress = '0x519145B771a6e450461af89980e5C17Ff6Fd8A92';
     const priceWei = ethers.BigNumber.from(634380980125554);
 
     // Create provider
@@ -15,9 +14,12 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 
     // Create server wallet
-    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-    console.log(`server wallet address = ${wallet.address}`);
-    console.log(`user wallet address = ${userAddress}`);
+    const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+    console.log(`server wallet address = ${serverWallet.address}`);
+
+    // Create user wallet
+    const userWallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, provider);
+    console.log(`user wallet address = ${userWallet.address}`);
 
     // Create payment token contract handle
     const abi = [
@@ -26,13 +28,16 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
         'function withdraw(uint256 value) external',
         'function transfer(address to, uint256 value) external returns (bool)'
     ];
-    const token = new ethers.Contract(tokenAddress, abi, wallet);
+    const token = new ethers.Contract(tokenAddress, abi, serverWallet);
     console.log(`payment token address = ${token.address}`);
+
+    // Grant infinite approval
+    await (await token.approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
 
     // Estimate gas costs for full upload process
     let transferFromEstimate;
     try {
-        transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
+        transferFromEstimate = await token.estimateGas.transferFrom(userWallet.address, serverWallet.address, priceWei);
     }
     catch(err) {
         console.log(`Error occurred while estimating transferFrom gas cost. ${err.name}: ${err.message}`);
@@ -53,7 +58,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 
     let sendEthEstimate
     try {
-        sendEthEstimate = await wallet.estimateGas({to: bundlrAddress, value: priceWei}); // Assume price not dependent on "to" address
+        sendEthEstimate = await serverWallet.estimateGas({to: bundlrAddress, value: priceWei}); // Assume price not dependent on "to" address
     }
     catch(err) {
         console.log(`Error occurred while estimating send ETH gas cost. ${err.name}: ${err.message}`);
@@ -73,7 +78,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 
     let transferEstimate;
     try {
-        transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
+        transferEstimate = await token.estimateGas.transfer(userWallet.address, priceWei); // Assume price not dependent on amount
     }
     catch(err) {
         console.log(`Error occurred while estimating transfer gas cost. ${err.name}: ${err.message}`);
@@ -84,6 +89,8 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate).add(unwrapEstimate).add(wrapEstimate);
     console.log(`gasEstimate = ${gasEstimate}`);
 
+    // Revoke approval
+    await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
 }
 
 (async() => {
