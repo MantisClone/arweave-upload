@@ -203,6 +203,18 @@ exports.create = async (req, res) => {
 		return;
 	}
 
+	let feeData;
+	try {
+		feeData = await provider.getFeeData();
+	}
+	catch(err) {
+		errorResponse(req, res, err, 500, `Error occurred while getting fee data.`);
+		return;
+	}
+	// Assume all payment chains support EIP-1559 transactions.
+	const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
+	console.log(`feeEstimate = ${feeEstimate}`);
+
 	// Check server fee token balance exeeds fee estimate
 	let feeTokenBalance;
 	try {
@@ -222,18 +234,6 @@ exports.create = async (req, res) => {
 			`Server is unable to process payments at this time. Please try again later.`);
 		return;
 	}
-
-	let feeData;
-	try {
-		feeData = await provider.getFeeData();
-	}
-	catch(err) {
-		errorResponse(req, res, err, 500, `Error occurred while getting fee data.`);
-		return;
-	}
-	// Assume all payment chains support EIP-1559 transactions.
-	const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
-	console.log(`feeEstimate = ${feeEstimate}`);
 
 	const quoteId = crypto.randomBytes(16).toString("hex");
 
