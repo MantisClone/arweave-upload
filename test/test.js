@@ -156,7 +156,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should fail when invalid IPFS URI", async function() {
-                const timeoutSeconds = 150;
+                const timeoutSeconds = 200;
                 this.timeout(timeoutSeconds * 1000);
 
                 const quoteResponse = await getQuote(userWallet);
