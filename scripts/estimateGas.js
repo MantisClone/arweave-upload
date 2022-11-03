@@ -1,7 +1,9 @@
 const ethers = require('ethers');
 
-// Export PRIVATE_KEY before running
-
+/**
+Print gas estimates for uploading a file to Arweave
+Export PRIVATE_KEY before running
+ */
 async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 
     const userAddress = '0x519145B771a6e450461af89980e5C17Ff6Fd8A92';
