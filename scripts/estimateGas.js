@@ -11,8 +11,16 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
 
     // Create provider
     console.log(`provider URL = ${providerUrl}`)
-    const provider = ethers.getDefaultProvider(providerUrl);
-    console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
+
+    let provider
+    try {
+        provider = ethers.getDefaultProvider(providerUrl);
+        console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
+    }
+    catch(err) {
+        console.log(`Error occurred while getting network info. ${err?.name}: ${err?.message}`);
+        return;
+    }
 
     // Create server wallet
     const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
@@ -34,16 +42,6 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
     const token = new ethers.Contract(tokenAddress, abi, serverWallet);
     console.log(`payment token address = ${token.address}`);
 
-    // User: grant infinite approval to server
-    console.log(`Waiting for approval...`);
-    try {
-        await (await token.connect(userWallet).approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
-    }
-    catch(err) {
-        console.log(`Error occurred while granting infinite approval. ${err?.name}: ${err?.message}`)
-        return;
-    }
-
 	// Check that user has sufficient funds
 	let userBalance;
 	try {
@@ -58,6 +56,31 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
 		console.log(`User balance is less than current price. current price: ${priceWei}, userBalance: ${userBalance}`);
 		return;
 	}
+
+    // Check that server has sufficient funds
+	let serverBalance;
+	try {
+		serverBalance = await token.balanceOf(serverWallet.address);
+	}
+	catch(err) {
+		console.log(`Error occurred while checking user token balance. ${err?.name}: ${err?.message}`);
+		return;
+	}
+	console.log(`serverBalance = ${serverBalance}`);
+	if(serverBalance.lt(priceWei)) {
+		console.log(`User balance is less than current price. current price: ${priceWei}, serverBalance: ${serverBalance}`);
+		return;
+	}
+
+    // User: grant infinite approval to server
+    console.log(`Waiting for approval...`);
+    try {
+        await (await token.connect(userWallet).approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
+    }
+    catch(err) {
+        console.log(`Error occurred while granting infinite approval. ${err?.name}: ${err?.message}`)
+        return;
+    }
 
     // Estimate gas costs for full upload process
     let transferFromEstimate;
@@ -127,7 +150,7 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
 
 (() => {
     tokens.forEach(async (token) => {
-        if([80001].includes(token.chainId)) {
+        if([5].includes(token.chainId)) {
             await estimateGas(
                 token.providerUrl,
                 token.wrappedAddress,
