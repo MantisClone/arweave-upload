@@ -34,7 +34,13 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     console.log(`payment token address = ${token.address}`);
 
     // Grant infinite approval
-    await (await token.approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
+    try {
+        await (await token.approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
+    }
+    catch(err) {
+        console.log(`Error occurred while granting infinite approval. ${err?.name}: ${err?.message}`)
+        return;
+    }
 
 	// Check that user has sufficient funds
 	let userBalance;
@@ -42,7 +48,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 		userBalance = await token.balanceOf(userAddress);
 	}
 	catch(err) {
-		console.log(`Error occurred while checking user token balance. ${err.name}: ${err.message}`);
+		console.log(`Error occurred while checking user token balance. ${err?.name}: ${err?.message}`);
 		return;
 	}
 	console.log(`userBalance = ${userBalance}`);
@@ -57,7 +63,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
         transferFromEstimate = await token.estimateGas.transferFrom(userWallet.address, serverWallet.address, priceWei);
     }
     catch(err) {
-        console.log(`Error occurred while estimating transferFrom gas cost. ${err.name}: ${err.message}`);
+        console.log(`Error occurred while estimating transferFrom gas cost. ${err?.name}: ${err?.message}`);
         return;
     }
     console.log(`transferFromEstimate = ${transferFromEstimate}`);
@@ -68,7 +74,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
         unwrapEstimate = await token.estimateGas.withdraw(priceWei);
     }
     catch(err) {
-        console.log(`Error occurred while estimating withdraw gas cost. ${err.name}: ${err.message}`);
+        console.log(`Error occurred while estimating withdraw gas cost. ${err?.name}: ${err?.message}`);
         return;
     }
     console.log(`unwrapEstimate = ${unwrapEstimate}`);
@@ -78,7 +84,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
         sendEthEstimate = await serverWallet.estimateGas({to: bundlrAddress, value: priceWei}); // Assume price not dependent on "to" address
     }
     catch(err) {
-        console.log(`Error occurred while estimating send ETH gas cost. ${err.name}: ${err.message}`);
+        console.log(`Error occurred while estimating send ETH gas cost. ${err?.name}: ${err?.message}`);
         return;
     }
     console.log(`sendEthEstimate = ${sendEthEstimate}`);
@@ -88,7 +94,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
         wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
     }
     catch(err) {
-        console.log(`Error occurred while estimating deposit gas cost. ${err.name}: ${err.message}`);
+        console.log(`Error occurred while estimating deposit gas cost. ${err?.name}: ${err?.message}`);
         return;
     }
     console.log(`wrapEstimate = ${wrapEstimate}`);
@@ -98,7 +104,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
         transferEstimate = await token.estimateGas.transfer(userWallet.address, priceWei); // Assume price not dependent on amount
     }
     catch(err) {
-        console.log(`Error occurred while estimating transfer gas cost. ${err.name}: ${err.message}`);
+        console.log(`Error occurred while estimating transfer gas cost. ${err?.name}: ${err?.message}`);
         return;
     }
     console.log(`transferEstimate = ${transferEstimate}`);
@@ -107,7 +113,13 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     console.log(`gasEstimate = ${gasEstimate}`);
 
     // Revoke approval
-    await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
+    try {
+        await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
+    }
+    catch(err) {
+        console.log(`Error occurred while revoking approval. ${err?.name}: ${err?.message}`)
+        return;
+    }
 }
 
 (async() => {
