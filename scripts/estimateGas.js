@@ -5,11 +5,12 @@ const { tokens } = require('../app/controllers/tokens.js');
 Print gas estimates for uploading a file to Arweave
 Export PRIVATE_KEY and TEST_PRIVATE_KEY before running
  */
-async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
+estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
 
     const priceWei = ethers.BigNumber.from(634380980125554);
 
     // Create provider
+    console.log(`provider URL = ${providerUrl}`)
     const provider = ethers.getDefaultProvider(providerUrl);
     console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 
@@ -45,7 +46,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 	// Check that user has sufficient funds
 	let userBalance;
 	try {
-		userBalance = await token.balanceOf(userAddress);
+		userBalance = await token.balanceOf(userWallet.address);
 	}
 	catch(err) {
 		console.log(`Error occurred while checking user token balance. ${err?.name}: ${err?.message}`);
@@ -122,7 +123,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     }
 }
 
-(async() => {
+(() => {
     tokens.forEach(async (token) => {
         if([80001, 5].includes(token.chainId)) {
             await estimateGas(
