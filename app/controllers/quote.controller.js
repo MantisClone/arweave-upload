@@ -6,6 +6,7 @@ const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const { acceptToken } = require("./tokens.js");
 const { errorResponse } = require("./error.js");
+const { gasEstimate } = require("./gasEstimate.js");
 
 const quoteidRegex = /^[a-fA-F0-9]{32}$/;
 
@@ -201,59 +202,6 @@ exports.create = async (req, res) => {
 		errorResponse(req, res, err, 500, `Error occurred while creating a Wallet instance.`);
 		return;
 	}
-
-	// Create payment token contract handle
-	let token;
-	try {
-		const abi = [
-			'function transferFrom(address from, address to, uint256 value) external returns (bool)',
-			'function deposit(uint256 value) external',
-			'function withdraw(uint256 value) external',
-			'function transfer(address to, uint256 value) external returns (bool)'
-		];
-		const tokenAddress = paymentToken?.wrappedAddress || paymentToken.tokenAddress ;
-		token = new ethers.Contract(tokenAddress, abi, wallet);
-		console.log(`payment token address = ${token.address}`);
-	}
-	catch(err) {
-		errorResponse(req, res, err, 500, `Error occurred while connecting to payment token contract.`);
-		return;
-	}
-
-	// Estimate gas costs for full upload process
-	let transferFromEstimate;
-	let unwrapEstimate;
-	let sendEthEstimate
-	let wrapEstimate;
-	let transferEstimate;
-	try {
-		// 1. Pull ERC-20 token from userAddress
-		transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
-		// 2. Unwrap if necessary
-		unwrapEstimate = await token.estimateGas.withdraw(priceWei);
-		// 3. Push funds to Bundlr account
-		// TODO: Move this to `token` struct in token.js
-		const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
-		sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei}); // Assume price not dependent on "to" address
-		// 4. Possibly refund in case of non-recoverable failure
-		wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
-		transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
-	}
-	catch(err) {
-		errorResponse(req, res, err, 500, `Error occurred while estimating gas costs for upload.`);
-		return;
-	}
-	console.log(`transferFromEstimate = ${transferFromEstimate}`);
-	console.log(`unwrapEstimate = ${unwrapEstimate}`);
-	console.log(`sendEthEstimate = ${sendEthEstimate}`);
-	console.log(`wrapEstimate = ${wrapEstimate}`);
-	console.log(`transferEstimate = ${transferEstimate}`);
-
-	let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
-	if(paymentToken.wrappedAddress) {
-		gasEstimate = gasEstimate.add(unwrapEstimate).add(wrapEstimate);
-	}
-	console.log(`gasEstimate = ${gasEstimate}`);
 
 	let feeData;
 	try {
