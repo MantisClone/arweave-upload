@@ -21,7 +21,7 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     const userWallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, provider);
     console.log(`user wallet address = ${userWallet.address}`);
 
-    // Create payment token contract handle
+    // Create token contract instance, connected to server wallet
     const abi = [
         'function transferFrom(address from, address to, uint256 value) external returns (bool)',
         'function approve(address, uint256) external returns (bool)',
@@ -33,9 +33,9 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     const token = new ethers.Contract(tokenAddress, abi, serverWallet);
     console.log(`payment token address = ${token.address}`);
 
-    // Grant infinite approval
+    // User: grant infinite approval to server
     try {
-        await (await token.approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
+        await (await token.connect(userWallet).approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
     }
     catch(err) {
         console.log(`Error occurred while granting infinite approval. ${err?.name}: ${err?.message}`)
@@ -112,9 +112,9 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
     let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate).add(unwrapEstimate).add(wrapEstimate);
     console.log(`gasEstimate = ${gasEstimate}`);
 
-    // Revoke approval
+    // User: revoke approval to server
     try {
-        await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
+        await (await token.connect(userWallet).approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
     }
     catch(err) {
         console.log(`Error occurred while revoking approval. ${err?.name}: ${err?.message}`)
