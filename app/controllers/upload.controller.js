@@ -227,7 +227,6 @@ exports.upload = async (req, res) => {
 		console.log(`payment token address = ${token.address}`);
 	}
 	catch(err) {
-		console.error(err.message);
 		errorResponse(req, res, err, 500, `Error occurred while connecting to payment token contract.`);
 		return;
 	}
