@@ -34,7 +34,7 @@ jobs:
       run: |
         npm start 2>&1 &
         sleep 2
-        npm test -- -g "should upload and get link"
+        npm test
       env:
         # Server env vars
         ACCEPTED_PAYMENTS: ethereum,matic,boba,boba-eth

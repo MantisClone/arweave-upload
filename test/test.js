@@ -2,6 +2,7 @@ const ethers = require("ethers");
 const axios = require("axios");
 const { expect } = require("chai");
 const { getQuote, waitForUpload } = require("./test.helpers.js");
+const Quote = require("../app/models/quote.model.js");
 
 describe("DBS Arweave Upload", function () {
     const provider = ethers.getDefaultProvider("https://rpc-mumbai.maticvigil.com/");
@@ -48,6 +49,7 @@ describe("DBS Arweave Upload", function () {
             'function approve(address, uint256) external returns (bool)',
             'function balanceOf(address owner) external view returns (uint256)'
         ];
+        // WMATIC on Mumbai (Polygon Testnet): https://mumbai.polygonscan.com/token/0x9c3c9283d3e44854697cd22d3faa240cfb032889
         const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, userWallet);
 
         describe("without approval", function () {
@@ -55,7 +57,7 @@ describe("DBS Arweave Upload", function () {
             it("upload, without approval, should fail to pull funds from user account", async function() {
                 this.timeout(20 * 1000);
 
-                const userBalanceBefore = token.balanceOf(userWallet.address);
+                const userBalanceBefore = await token.balanceOf(userWallet.address);
 
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
@@ -73,16 +75,16 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data.message).contains("Allowance is less than current rate")
 
                 const getStatusResponse = await axios.get(`http://localhost:8081/getStatus?quoteId=${quote.quoteId}`);
-                expect(getStatusResponse.data.status).equals(1);
+                expect(getStatusResponse.data.status).equals(Quote.QUOTE_STATUS_WAITING);
 
-                const userBalanceAfter = token.balanceOf(userWallet.address);
-                expect(userBalanceBefore).equals(userBalanceAfter);
+                const userBalanceAfter = await token.balanceOf(userWallet.address);
+                expect(userBalanceBefore.eq(userBalanceAfter)).to.be.true;
             });
 
-        })
+        });
 
         describe("with approval", function () {
-            const timeoutSeconds = 120;
+            const timeoutSeconds = 100;
             this.timeout(timeoutSeconds * 1000);
 
             afterEach("revoke approval", async function () {
@@ -91,7 +93,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should successfully pull funds from user account", async function() {
-                const userBalanceBefore = token.balanceOf(userWallet.address);
+                const userBalanceBefore = await token.balanceOf(userWallet.address);
 
                 const quoteResponse = await getQuote(userWallet);
                 const quote = quoteResponse.data;
@@ -111,10 +113,10 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data).equals('');
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(5);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
-                const userBalanceAfter = token.balanceOf(userWallet.address);
-                expect(userBalanceBefore - quote.tokenAmount).equals(userBalanceAfter);
+                const userBalanceAfter = await token.balanceOf(userWallet.address);
+                expect(userBalanceBefore.sub(quote.tokenAmount).lte(userBalanceAfter)).to.be.true;
             });
 
             it("upload, with approval, should respond 403 when nonce is old", async function() {
@@ -137,7 +139,7 @@ describe("DBS Arweave Upload", function () {
                 }).catch((err) => err.response);
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(5);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
                 // Attempt upload with nonce lower than previous
                 nonce = 0;
@@ -153,10 +155,33 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data.message).contains("Invalid nonce");
             });
 
-            it("getLink, after successful upload, should return a list of transaction IDs", async function() {
-                const timeoutSeconds = 120;
+            it("upload, with approval, should fail when invalid IPFS URI", async function() {
+                const timeoutSeconds = 150;
                 this.timeout(timeoutSeconds * 1000);
 
+                const quoteResponse = await getQuote(userWallet);
+                const quote = quoteResponse.data;
+
+                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+
+                const nonce = Math.floor(new Date().getTime()) / 1000;
+                const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                const signature = await userWallet.signMessage(message);
+                const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://Qmbadbadbadbadbadbadbadbadbadbadbadbadbadbadba", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
+                    nonce: nonce,
+                    signature: signature,
+                });
+                expect(uploadResponse.status).equals(200);
+                expect(uploadResponse.data).equals('');
+
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_DOWNLOAD_FAILED);
+            });
+
+
+            it("getLink, after successful upload, should return a list of transaction IDs", async function() {
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
                 expect(getQuoteResponse.status).equals(200);
@@ -183,13 +208,12 @@ describe("DBS Arweave Upload", function () {
                 expect(uploadResponse.data).equals('');
 
                 const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(5);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
 
                 nonce = Math.floor(new Date().getTime()) / 1000;
                 message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
                 signature = await userWallet.signMessage(message);
                 const getLinkResponse = await axios.get(`http://localhost:8081/getLink?quoteId=${quote.quoteId}&nonce=${nonce}&signature=${signature}`);
-                expect(getLinkResponse).to.exist;
                 expect(getLinkResponse.status).to.equal(200);
                 expect(getLinkResponse.data[0]).contains.all.keys(
                     "type",

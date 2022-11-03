@@ -6,7 +6,6 @@ const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
-const { QUOTE_STATUS_PAYMENT_FAILED } = require("../models/quote.model.js");
 const { errorResponse } = require("./error.js");
 
 exports.upload = async (req, res) => {
@@ -56,11 +55,11 @@ exports.upload = async (req, res) => {
 		}
 		// TODO: validate URL format better
 		if(!files[i].startsWith('ipfs://')) {
-			errorResponse(req, res, null, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
+			errorResponse(req, res, null, 400, `Invalid protocol on index ${i}. Must be ipfs://<CID>`);
 			return;
 		}
 		if(!cidRegex.test(files[i].substring(7))) {
-			errorResponse(req, res, null, 400, `Invalid files URI on index ${i}. Must be ipfs://<CID>`);
+			errorResponse(req, res, null, 400, `Invalid CID on index ${i}.`);
 			return;
 		}
 	}
@@ -160,10 +159,9 @@ exports.upload = async (req, res) => {
 		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
 	}
 	catch(err) {
-		errorResponse(req, res, err, 500, "Unable to connect to Bundlr");
+		errorResponse(req, res, err, 500, "Could not establish connection to payment processor.");
 		return;
 	}
-
 	let bundlrPriceWei;
 	let priceWei;
 	try {
@@ -171,12 +169,10 @@ exports.upload = async (req, res) => {
 		priceWei = ethers.BigNumber.from(bundlrPriceWei.toString(10));
 	}
 	catch(err) {
-		errorResponse(req, res, err, 500, "Unable to get price from Bundlr");
+		errorResponse(req, res, err, 500, "Could not query price from payment processor.");
 		return;
 	}
-
 	const quoteTokenAmount = ethers.BigNumber.from(quote.tokenAmount);
-
 	if(priceWei.gte(quoteTokenAmount)) {
 		errorResponse(req, res, null, 400, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
 		return;
@@ -201,7 +197,7 @@ exports.upload = async (req, res) => {
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while establishing connection to Node RPC provider`);
+		errorResponse(req, res, err, 500, `Error occurred while establishing connection to Node RPC provider`);
 		return;
 	}
 
@@ -211,7 +207,7 @@ exports.upload = async (req, res) => {
 		wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while creating a Wallet instance.`);
+		errorResponse(req, res, err, 500, `Error occurred while creating a Wallet instance.`);
 		return;
 	}
 
@@ -232,7 +228,7 @@ exports.upload = async (req, res) => {
 	}
 	catch(err) {
 		console.error(err.message);
-		errorResponse(req, res, 500, `Error occurred while connecting to payment token contract.`);
+		errorResponse(req, res, err, 500, `Error occurred while connecting to payment token contract.`);
 		return;
 	}
 
@@ -242,7 +238,7 @@ exports.upload = async (req, res) => {
 		allowance = await token.allowance(userAddress, wallet.address);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occured while checking allowance.`);
+		errorResponse(req, res, err, 500, `Error occured while checking allowance.`);
 		return;
 	}
 	console.log(`allowance = ${allowance}`);
@@ -257,7 +253,7 @@ exports.upload = async (req, res) => {
 		userBalance = await token.balanceOf(userAddress);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while checking user token balance.`);
+		errorResponse(req, res, err, 500, `Error occurred while checking user token balance.`);
 		return;
 	}
 	console.log(`userBalance = ${userBalance}`);
@@ -306,20 +302,20 @@ exports.upload = async (req, res) => {
 		feeData = await provider.getFeeData();
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while getting fee data.`);
+		errorResponse(req, res, err, 500, `Error occurred while getting fee data.`);
 		return;
 	}
 	// Assume all payment chains support EIP-1559 transactions.
 	const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
 	console.log(`feeEstimate = ${feeEstimate}`);
 
-	// Check server fee token balance
+	// Check server fee token balance exeeds fee estimate
 	let feeTokenBalance;
 	try {
 		feeTokenBalance = await wallet.getBalance();
 	}
 	catch(err) {
-		errorResponse(req, res, 500, `Error occurred while getting server fee token balance.`);
+		errorResponse(req, res, err, 500, `Error occurred while getting server fee token balance.`);
 		return;
 	}
 	console.log(`feeTokenBalance = ${feeTokenBalance}`);
@@ -328,15 +324,18 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
+	// TODO: Consider Checking Bundlr account balance
+
+	// send 200
 	console.log(`${req.path} response: 200`);
-	res.send(null); // send 200
+	res.send(null);
 
 	// change status
 	try {
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_START);
 	}
 	catch(err) {
-		console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_START}`);
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_START: ${err?.name}: ${err?.message}`);
 		return;
 	}
 
@@ -346,17 +345,23 @@ exports.upload = async (req, res) => {
 		await (await token.transferFrom(userAddress, wallet.address, priceWei)).wait(confirms);
 	}
 	catch(err) {
-		console.log(err);
+		console.error(`Error occurred while pulling payment from user address: ${err?.name}: ${err?.message}`);
 		try {
-			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED);
 		}
 		catch(err) {
-			console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_FAILED}`);
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PULL_FAILED: ${err?.name}: ${err?.message}`);
 		}
 		return;
 	}
 
-	// TODO: Set status
+	try {
+		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS);
+	}
+	catch(err) {
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PULL_SUCCESS: ${err?.name}: ${err?.message}`);
+		return;
+	}
 
 	// If payment is wrapped, unwrap it (ex. WETH -> ETH)
 	if(paymentToken.wrappedAddress) {
@@ -364,143 +369,153 @@ exports.upload = async (req, res) => {
 			await (await token.withdraw(priceWei)).wait(confirms);
 		}
 		catch(err) {
-			console.log(err);
+			console.error(`Error occurred while unwrapping payment: ${err?.name}: ${err?.message}`);
 			try {
-				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED);
 			}
 			catch(err) {
-				console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_PAYMENT_FAILED}`);
+				console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED: ${err?.name}: ${err?.message}`);
 			}
 			return;
 		}
 	}
 
-	// TODO: Set status
-
-	// TODO: Check Bundlr account balance
-
-	// Fund our EOA's Bundlr Account
 	try {
-		let response = await bundlr.fund(bundlrPriceWei);
-		// TODO: should we record the response values?
-		/* {
-			id: '0x15d26881006589bd3ac5366ebd5031d8c14a2755d962337fad7216744fe92ed5',
-			quantity: '3802172224166296',
-			reward: '45832500525000',
-			target: '0x853758425e953739F5438fd6fd0Efe04A477b039'
-		} */
+		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_UNWRAP_SUCCESS);
 	}
 	catch(err) {
-		errorResponse(req, res, 500, "Can't fund the quote.");
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_UNWRAP_SUCCESS: ${err?.name}: ${err?.message}`);
 		return;
 	}
 
+	// Fund server's Bundlr Account
 	try {
-		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_END);
+		await bundlr.fund(bundlrPriceWei);
+	}
+	catch(err) {
+		console.error(`Error occurred while funding Bundlr account: ${err?.name}: ${err?.message}`);
+		try {
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_PUSH_FAILED);
+		}
+		catch(err) {
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_PUSH_FAILED: ${err?.name}: ${err?.message}}`);
+			return;
+		}
+	}
+
+	try {
 		Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_START);
 	}
 	catch(err) {
-		console.error(`Error occurred while setting status to ${Quote.QUOTE_STATUS_UPLOAD_START}`);
+		console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_START: ${err?.name}: ${err?.message}}`);
 		return;
 	}
 
-	let files_uploaded = 0;
-	await Promise.all(files.map(async (file, index) => {
-		let quotedFile;
-		try {
-			quotedFile = File.get(quoteId, index);
-		}
-		catch(err) {
-			console.log(err);
-			return;
-		}
-
-		const ipfsFile = process.env.IPFS_GATEWAY + file.substring(7);
-
-		// download file
-		await axios({
-			method: "get",
-			url: ipfsFile,
-			responseType: "arraybuffer"
-		})
-		.then(response => {
-			// download started
-			const contentType = response.headers['content-type'];
-			const httpLength = parseInt(response.headers['content-length']);
-
-			if(httpLength) {
-				if(httpLength != quotedFile.length) {
-					// quoted size is different than real size
-					console.log(`Different lengths, quoted length = ${quotedFile.length}, http length ${httpLength}`);
-				}
+	Promise.all(files.map((file, index) => {
+		return new Promise(async (resolve, reject) => {
+			// Get quoted file length
+			let quotedFileLength;
+			try {
+				quotedFileLength = File.get(quoteId, index).length;
+			}
+			catch(err) {
+				console.error(`Error occurred while reading quoted file length from database: ${err?.name}: ${err?.message}. CID = ${file}, file index = ${index}`);
+				reject(Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR);
+				return;
 			}
 
-			let tags = [];
-			if(contentType) {
-				// TODO: sanitize contentType
-				tags = [{name: "Content-Type", value: contentType}];
-			}
+			const ipfsFile = process.env.IPFS_GATEWAY + file.substring(7);
 
-			const uploader = bundlr.uploader.chunkedUploader;
+			// download file
+			await axios({
+				method: "get",
+				url: ipfsFile,
+				responseType: "arraybuffer"  // Download in chunks, stored in memory
+			})
+			.then(async res => {
+				// download started
+				const contentType = res.headers['content-type'];
+				const actualLength = parseInt(res.headers['content-length']);
 
-			uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288);
-			uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1);
-
-			uploader.on("chunkUpload", (chunkInfo) => {
-				//console.log(`Uploaded Chunk number ${chunkInfo.id}, offset of ${chunkInfo.offset}, size ${chunkInfo.size} Bytes, with a total of ${chunkInfo.totalUploaded} bytes uploaded.`);
-			});
-			uploader.on("chunkError", (e) => {
-				//console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}`);
-			});
-			uploader.on("done", async (finishRes) => {
-				const transactionId = finishRes.data.id;
-				try {
-					File.setHash(quoteId, index, transactionId);
-				}
-				catch(err) {
-					console.error(err);
-				}
-
-				// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
-				try {
-					axios.head(process.env.ARWEAVE_GATEWAY + transactionId);
-
-					files_uploaded = files_uploaded + 1;
-					if(files_uploaded == files.length) {
-						try {
-							Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
-						}
-						catch(err) {
-							console.error(err);
-						}
+				if(actualLength) {
+					if(actualLength > quotedFileLength) {
+						console.error(`Actual file length exceeds quoted length. CID = ${file}, file index = ${index}, quoted length = ${quotedFileLength}, actual length ${actualLength}`);
+						reject(Quote.QUOTE_STATUS_UPLOAD_ACTUAL_FILE_LEN_EXCEEDS_QUOTE);
+						return;
 					}
 				}
-				catch(err) {
-					// transactionId not found
-					console.log(`Unable to retreive uploaded file with transaction id ${transactionId}, error: ${err.response.status}`);
+				else {
+					console.warn("Warning: Unknown file length. Uploading blindly.");
 				}
-			});
 
-			const transactionOptions = {tags: tags};
-			try {
-				// start upload
-				uploader.uploadData(Buffer.from(response.data, "binary"), transactionOptions);
-				// TODO: also hash the file
-			}
-			catch(error) {
-				console.log(error.message);
-				// TODO: Revisit this status code and consider changing to something unique
-				// TODO: Add separate status for insufficient funds, upload fail, etc.
+				// Set the Arweave tags: https://github.com/ArweaveTeam/arweave-standards/blob/master/best-practices/BP-105.md
+				const arweaveTags = contentType ? [{name: "Content-Type", value: contentType}] : [];
+
+				const uploader = bundlr.uploader.chunkedUploader;
+				uploader.setChunkSize(process.env.BUNDLR_CHUNK_SIZE || 524288); // Default: 512 kB
+				uploader.setBatchSize(process.env.BUNDLR_BATCH_SIZE || 1); // Default: 1 chunk at a time
+
+				uploader.on("chunkError", (e) => {
+					console.error(`Error uploading chunk number ${e.id} - ${e.res.statusText}. CID = ${file}, file index = ${index}`);
+					reject(Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED);
+					return;
+				});
+				uploader.on("done", async (finishRes) => {
+					const transactionId = finishRes.data.id;
+					try {
+						File.setHash(quoteId, index, transactionId);
+					}
+					catch(err) {
+						console.error(`Error occurred while writing file transaction id to database: ${err?.name}: ${err?.message}. CID = ${file}, file index = ${index}`);
+						reject(Quote.QUOTE_STATUS_UPLOAD_INTERNAL_ERROR);
+						return;
+					}
+
+					// perform HEAD request to Arweave Gateway to verify that file uploaded successfully
+					try {
+						await axios.head(process.env.ARWEAVE_GATEWAY + transactionId, {timeout: 10000});
+					}
+					catch(err) {
+						console.warn(`Unable to verify file via Arweave gateway. transaction id: ${transactionId}, error: ${err?.response?.status}`);
+					}
+
+					resolve(transactionId);
+					return;
+				});
+
+				const transactionOptions = {tags: arweaveTags};
 				try {
-					Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_FAILED);
+					// Download each chunk and immediately upload to Bundlr without storing to disk.
+					await uploader.uploadData(Buffer.from(res.data, "binary"), transactionOptions);
 				}
 				catch(err) {
-					console.error(err);
+					console.error(`Error occurred while uploading file: ${err?.name}: ${err?.message}. CID = ${file}, file index = ${index}`);
+					// TODO: Consider separate status for insufficient funds.
+					reject(Quote.QUOTE_STATUS_UPLOAD_UPLOAD_FAILED);
+					return;
 				}
-			}
-		})
-		.catch(error => {
-			console.error(error);
+			})
+			.catch(err => {
+				console.error(`Error occurred while downloading file ${file}, index ${index}: ${err?.name}: ${err?.message}`);
+				reject(Quote.QUOTE_STATUS_UPLOAD_DOWNLOAD_FAILED);
+				return;
+			});
 		});
-	}));
+	})).then(() => {
+		try {
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_UPLOAD_END);
+		}
+		catch(err) {
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_UPLOAD_END: ${err?.name}: ${err?.message}}`);
+			return;
+		}
+	}).catch(quoteStatus => {
+		try {
+			Quote.setStatus(quoteId, quoteStatus);
+		}
+		catch(err) {
+			console.error(`Error occurred while setting status to ${quoteStatus}: ${err?.name}: ${err?.message}}`);
+			return;
+		}
+	});
 };
