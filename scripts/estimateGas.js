@@ -1,4 +1,5 @@
 const ethers = require('ethers');
+const { tokens } = require('../app/controllers/tokens.js');
 
 /**
 Print gas estimates for uploading a file to Arweave
@@ -61,9 +62,13 @@ async function estimateGas(providerUrl, tokenAddress, bundlrAddress) {
 }
 
 (async() => {
-	await estimateGas(
-        'https://rpc-mumbai.maticvigil.com/',
-        '0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889',
-        '0x853758425e953739F5438fd6fd0Efe04A477b039'
-    );
+    tokens.forEach(async (token) => {
+        if([80001, 5].includes(token.chainId)) {
+            await estimateGas(
+                token.providerUrl,
+                token.wrappedAddress,
+                '0x853758425e953739F5438fd6fd0Efe04A477b039'
+            );
+        }
+    })
 })();

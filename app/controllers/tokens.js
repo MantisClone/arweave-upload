@@ -56,4 +56,4 @@ getAcceptedPaymentDetails = () => {
 	return compressedDetails;
 };
 
-module.exports = { acceptToken, getAcceptedPaymentDetails };
+module.exports = { tokens, acceptToken, getAcceptedPaymentDetails };
