@@ -448,6 +448,7 @@ exports.upload = async (req, res) => {
 					console.warn("Warning: Unknown file length. Uploading blindly.");
 				}
 
+				// Set the Arweave tags: https://github.com/ArweaveTeam/arweave-standards/blob/master/best-practices/BP-105.md
 				const arweaveTags = contentType ? [{name: "Content-Type", value: contentType}] : [];
 
 				const uploader = bundlr.uploader.chunkedUploader;
