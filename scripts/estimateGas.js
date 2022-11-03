@@ -35,6 +35,7 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
     console.log(`payment token address = ${token.address}`);
 
     // User: grant infinite approval to server
+    console.log(`Waiting for approval...`);
     try {
         await (await token.connect(userWallet).approve(serverWallet.address, ethers.constants.MaxInt256)).wait();
     }
@@ -114,6 +115,7 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
     console.log(`gasEstimate = ${gasEstimate}`);
 
     // User: revoke approval to server
+    console.log(`Waiting for revoke...`);
     try {
         await (await token.connect(userWallet).approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
     }
@@ -125,7 +127,7 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
 
 (() => {
     tokens.forEach(async (token) => {
-        if([80001, 5].includes(token.chainId)) {
+        if([80001].includes(token.chainId)) {
             await estimateGas(
                 token.providerUrl,
                 token.wrappedAddress,
