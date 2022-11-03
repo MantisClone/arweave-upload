@@ -6,6 +6,7 @@ const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const { acceptToken } = require("./tokens.js");
 const { errorResponse } = require("./error.js");
+const { gasEstimate } = require("./gasEstimate.js");
 
 const quoteidRegex = /^[a-fA-F0-9]{32}$/;
 
@@ -151,10 +152,11 @@ exports.create = async (req, res) => {
 
 	let bundlr;
 	try {
-		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+		const bundlrConfig = paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {};
+		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, bundlrConfig);
 	}
 	catch(err) {
-		errorResponse(req, res, err, 500, "Unable to connect to Bundlr");
+		errorResponse(req, res, err, 500, "Unable to connect to payment processor.");
 		return;
 	}
 
@@ -164,16 +166,78 @@ exports.create = async (req, res) => {
 		priceWei = ethers.BigNumber.from(priceWei.toString(10)); // need to convert so we can add buffer
 	}
 	catch(err) {
-		errorResponse(req, res, err, 500, "Unable to get price from Bundlr");
+		errorResponse(req, res, err, 500, "Unable to get price from payment processor.");
 		return;
 	}
 	const tokenAmount = priceWei.add(priceWei.div(10)); // add 10% buffer since prices fluctuate
 
-	// TODO: generate this better
+	// Create provider
+	let provider;
+	try {
+		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
+		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
+		if(jsonRpcUri === "default") {
+			const defaultProviderUrl = paymentToken.providerUrl;
+			console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
+			provider = ethers.getDefaultProvider(defaultProviderUrl);
+		}
+		else {
+			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
+			provider = ethers.getDefaultProvider(jsonRpcUri);
+		}
+		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
+	}
+	catch(err) {
+		errorResponse(req, res, err, 500, `Error occurred while establishing connection to Node RPC provider`);
+		return;
+	}
+
+	// Create wallet
+	let wallet;
+	try {
+		wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+	}
+	catch(err) {
+		errorResponse(req, res, err, 500, `Error occurred while creating a Wallet instance.`);
+		return;
+	}
+
+	let feeData;
+	try {
+		feeData = await provider.getFeeData();
+	}
+	catch(err) {
+		errorResponse(req, res, err, 500, `Error occurred while getting fee data.`);
+		return;
+	}
+	// Assume all payment chains support EIP-1559 transactions.
+	const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
+	console.log(`feeEstimate = ${feeEstimate}`);
+
+	// Check server fee token balance exeeds fee estimate
+	let feeTokenBalance;
+	try {
+		feeTokenBalance = await wallet.getBalance();
+	}
+	catch(err) {
+		errorResponse(req, res, err, 500, `Error occurred while getting server fee token balance.`);
+		return;
+	}
+	console.log(`feeTokenBalance = ${feeTokenBalance}`);
+	if(feeEstimate.gte(feeTokenBalance)) {
+		errorResponse(
+			req,
+			res,
+			`Estimated fees exceed server native fee token reserves. feeTokenSymbol: ${paymentToken.symbol} feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`,
+			503,
+			`Server is unable to process payments at this time. Please try again later.`);
+		return;
+	}
+
 	const quoteId = crypto.randomBytes(16).toString("hex");
 
 	// save data in database
-	const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 	const quote = new Quote({
 		quoteId: quoteId,
 		status: Quote.QUOTE_STATUS_WAITING,
@@ -181,7 +245,7 @@ exports.create = async (req, res) => {
 		chainId: chainId,
 		tokenAddress: tokenAddress,
 		userAddress: userAddress,
-		tokenAmount: tokenAmount.toString(),
+		tokenAmount: tokenAmount.add(feeEstimate).toString(),
 		approveAddress: wallet.address,
 		files: file_lengths
 	});

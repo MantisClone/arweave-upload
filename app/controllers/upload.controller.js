@@ -7,6 +7,7 @@ const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
 const { acceptToken } = require("./tokens.js");
 const { errorResponse } = require("./error.js");
+const { gasEstimate } = require("./gasEstimate.js");
 
 exports.upload = async (req, res) => {
 	console.log(`upload request: ${JSON.stringify(req.body)}`)
@@ -156,7 +157,8 @@ exports.upload = async (req, res) => {
 	// check if new price is sufficient
 	let bundlr;
 	try {
-		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {});
+		const bundlrConfig = paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {};
+		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, bundlrConfig);
 	}
 	catch(err) {
 		errorResponse(req, res, err, 500, "Could not establish connection to payment processor.");
@@ -177,7 +179,6 @@ exports.upload = async (req, res) => {
 		errorResponse(req, res, null, 400, `Quoted tokenAmount is less than current rate. Quoted amount: ${quote.tokenAmount}, current rate: ${priceWei}`);
 		return;
 	}
-
 
 	// Create provider
 	let provider;
@@ -227,7 +228,6 @@ exports.upload = async (req, res) => {
 		console.log(`payment token address = ${token.address}`);
 	}
 	catch(err) {
-		console.error(err.message);
 		errorResponse(req, res, err, 500, `Error occurred while connecting to payment token contract.`);
 		return;
 	}
@@ -262,41 +262,7 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	// Estimate gas costs for full upload process
-	let transferFromEstimate;
-	let unwrapEstimate;
-	let sendEthEstimate
-	let wrapEstimate;
-	let transferEstimate;
-	try {
-		// 1. Pull ERC-20 token from userAddress
-		transferFromEstimate = await token.estimateGas.transferFrom(userAddress, wallet.address, priceWei);
-		// 2. Unwrap if necessary
-		unwrapEstimate = await token.estimateGas.withdraw(priceWei);
-		// 3. Push funds to Bundlr account
-		const bundlrAddressOnMumbai = "0x853758425e953739F5438fd6fd0Efe04A477b039";
-		sendEthEstimate = await wallet.estimateGas({to: bundlrAddressOnMumbai, value: priceWei}); // Assume price not dependent on "to" address
-		// 4. Possibly refund in case of non-recoverable failure
-		wrapEstimate = await token.estimateGas.deposit(priceWei); // Assume price not dependent on amount
-		transferEstimate = await token.estimateGas.transfer(userAddress, priceWei); // Assume price not dependent on amount
-	}
-	catch(err) {
-		errorResponse(req, res, err, 500, `Error occurred while estimating gas costs for upload.`);
-		return;
-	}
-	console.log(`transferFromEstimate = ${transferFromEstimate}`);
-	console.log(`unwrapEstimate = ${unwrapEstimate}`);
-	console.log(`sendEthEstimate = ${sendEthEstimate}`);
-	console.log(`wrapEstimate = ${wrapEstimate}`);
-	console.log(`transferEstimate = ${transferEstimate}`);
-
-
-	let gasEstimate = transferFromEstimate.add(sendEthEstimate).add(transferEstimate);
-	if(paymentToken.wrappedAddress) {
-		gasEstimate = gasEstimate.add(unwrapEstimate).add(wrapEstimate);
-	}
-	console.log(`gasEstimate = ${gasEstimate}`);
-
+	// Calculate fee estimate
 	let feeData;
 	try {
 		feeData = await provider.getFeeData();

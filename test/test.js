@@ -11,13 +11,13 @@ describe("DBS Arweave Upload", function () {
 
     describe("getQuote", function () {
 
-        it("should respond 400 when request is empty", async function () {
+        it("getQuote should respond 400 when request is empty", async function () {
             const res = await axios.post(`http://localhost:8081/getQuote`).catch((err) => err.response);
             expect(res.status).equals(400);
             expect(res.data.message).contains("Missing type");
         });
 
-        it("should respond 200 when request is valid", async function () {
+        it("getQuote should respond 200 when request is valid", async function () {
             const res = await getQuote(userWallet).catch((err) => err.response);
             expect(res.status).equals(200);
             expect(res.data).contains.all.keys(
@@ -29,7 +29,7 @@ describe("DBS Arweave Upload", function () {
             );
         });
 
-        it("should respond 200 when request is valid, even when file is 1 TB", async function () {
+        it("getQuote should respond 200 when request is valid, even when file is 1 TB", async function () {
             const TB = 1_000_000_000_000;
             const res = await getQuote(userWallet, TB).catch((err) => err.response);
             expect(res.status).equals(200);
@@ -156,7 +156,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should fail when invalid IPFS URI", async function() {
-                const timeoutSeconds = 150;
+                const timeoutSeconds = 200;
                 this.timeout(timeoutSeconds * 1000);
 
                 const quoteResponse = await getQuote(userWallet);
