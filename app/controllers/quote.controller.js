@@ -155,7 +155,7 @@ exports.create = async (req, res) => {
 		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, bundlrConfig);
 	}
 	catch(err) {
-		errorResponse(req, res, err, 500, "Unable to connect to Bundlr");
+		errorResponse(req, res, err, 500, "Unable to connect to payment processor.");
 		return;
 	}
 
@@ -165,12 +165,11 @@ exports.create = async (req, res) => {
 		priceWei = ethers.BigNumber.from(priceWei.toString(10)); // need to convert so we can add buffer
 	}
 	catch(err) {
-		errorResponse(req, res, err, 500, "Unable to get price from Bundlr");
+		errorResponse(req, res, err, 500, "Unable to get price from payment processor.");
 		return;
 	}
 	const tokenAmount = priceWei.add(priceWei.div(10)); // add 10% buffer since prices fluctuate
 
-	// TODO: generate this better
 	const quoteId = crypto.randomBytes(16).toString("hex");
 
 	// save data in database

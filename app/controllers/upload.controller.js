@@ -179,7 +179,6 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-
 	// Create provider
 	let provider;
 	try {
