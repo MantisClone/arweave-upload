@@ -6,6 +6,8 @@ const Quote = require("../app/models/quote.model.js");
 const { getToken } = require("../app/controllers/tokens.js");
 
 describe("DBS Arweave Upload", function () {
+    console.log(process.env.CHAIN_ID);
+    console.log(process.env.TOKEN_ADDRESS);
     const providerUri = getToken(parseInt(process.env.CHAIN_ID), process.env.TOKEN_ADDRESS).providerUrl;
     const provider = ethers.getDefaultProvider(providerUri);
     const userWallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, provider);
