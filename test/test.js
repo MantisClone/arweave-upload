@@ -3,9 +3,11 @@ const axios = require("axios");
 const { expect } = require("chai");
 const { getQuote, waitForUpload } = require("./test.helpers.js");
 const Quote = require("../app/models/quote.model.js");
+const { getToken } = require("../app/controllers/tokens.js");
 
 describe("DBS Arweave Upload", function () {
-    const provider = ethers.getDefaultProvider(process.env.CHAIN_ID);
+    const providerUri = getToken(process.env.CHAIN_ID, process.env.TOKEN_ADDRESS).providerUrl;
+    const provider = ethers.getDefaultProvider(providerUri);
     const userWallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, provider);
     console.log(`user wallet address: ${userWallet.address}`);
 
