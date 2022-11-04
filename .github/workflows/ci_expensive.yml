@@ -1,13 +1,12 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: Node.js CI
+name: Node.js CI (Expensive)
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  schedule:
+    - cron: '0 8 1 1,4,7,10 *' # 8:00 AM, Quarterly
+  workflow_dispatch:
 
 jobs:
   test:
@@ -51,4 +50,4 @@ jobs:
         MAX_UPLOAD_SIZE: 1099511627776
         # Test env var
         TEST_PRIVATE_KEY: ${{ secrets.TEST_PRIVATE_KEY }}
-        ENABLE_EXPENSIVE_TESTS: false
+        ENABLE_EXPENSIVE_TESTS: true
