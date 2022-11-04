@@ -243,7 +243,7 @@ exports.create = async (req, res) => {
 		status: Quote.QUOTE_STATUS_WAITING,
 		created: Date.now(),
 		chainId: chainId,
-		tokenAddress: paymentToken?.wrappedAddress || paymentToken.tokenAddress,
+		tokenAddress: paymentToken.tokenAddress,
 		userAddress: userAddress,
 		tokenAmount: tokenAmount.add(feeEstimate).toString(),
 		approveAddress: wallet.address,

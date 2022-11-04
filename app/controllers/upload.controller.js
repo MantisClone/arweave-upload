@@ -223,7 +223,7 @@ exports.upload = async (req, res) => {
 			'function withdraw(uint256 value) external',
 			'function transfer(address to, uint256 value) external returns (bool)'
 		];
-		const tokenAddress = paymentToken?.wrappedAddress || paymentToken.tokenAddress ;
+		const tokenAddress = paymentToken.tokenAddress;
 		token = new ethers.Contract(tokenAddress, abi, wallet);
 		console.log(`payment token address = ${token.address}`);
 	}
@@ -329,21 +329,19 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	// If payment is wrapped, unwrap it (ex. WETH -> ETH)
-	if(paymentToken.wrappedAddress) {
+	// Unwrap payment token (ex. WETH -> ETH)
+	try {
+		await (await token.withdraw(priceWei)).wait(confirms);
+	}
+	catch(err) {
+		console.error(`Error occurred while unwrapping payment: ${err?.name}: ${err?.message}`);
 		try {
-			await (await token.withdraw(priceWei)).wait(confirms);
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED);
 		}
 		catch(err) {
-			console.error(`Error occurred while unwrapping payment: ${err?.name}: ${err?.message}`);
-			try {
-				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED);
-			}
-			catch(err) {
-				console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED: ${err?.name}: ${err?.message}`);
-			}
-			return;
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED: ${err?.name}: ${err?.message}`);
 		}
+		return;
 	}
 
 	try {
