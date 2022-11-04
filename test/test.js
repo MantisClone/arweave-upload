@@ -224,15 +224,7 @@ describe("DBS Arweave Upload", function () {
                     const timeoutSeconds = 3600;
                     this.timeout(timeoutSeconds * 1000);
 
-                    const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
-                        type: "arweave",
-                        userAddress: userWallet.address,
-                        files: [{length: 1103811824}], // 1.1 GB mp4 video, sha256 = 964101726e2191d094fc4d567e60d2171a93b18430b729c68293e5e93fd8585d
-                        payment: {
-                            chainId: 80001,
-                            tokenAddress: "0x0000000000000000000000000000000000001010",
-                        },
-                    });
+                    const quoteResponse = await getQuote(wallet, 1103811824);
                     const quote = quoteResponse.data;
                     const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
@@ -243,7 +235,8 @@ describe("DBS Arweave Upload", function () {
                     let signature = await userWallet.signMessage(message);
                     const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
                         quoteId: quote.quoteId,
-                        files: ["ipfs://QmPySemsQXoqMe4jyk9PiJ494jxB3dRL8kekrg9tD64btv"],
+                        // 1.1 GB mp4 video, sha256 = 964101726e2191d094fc4d567e60d2171a93b18430b729c68293e5e93fd8585d
+                        files: ["ipfs://QmPySemsQXoqMe4jyk9PiJ494jxB3dRL8kekrg9tD64btv", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
                         nonce: nonce,
                         signature: signature,
                     });
