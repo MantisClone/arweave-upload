@@ -223,6 +223,8 @@ describe("DBS Arweave Upload", function () {
 
 
             it("upload, via Goerli test network, after successful upload, should return a list of transaction IDs", async function() {
+                const goerliToken = new ethers.Contract("0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", abi, userWallet);
+
                 const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
                     type: "arweave",
                     userAddress: userWallet.address,
@@ -243,7 +245,7 @@ describe("DBS Arweave Upload", function () {
                     "approveAddress"
                 );
 
-                await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+                await (await goerliToken.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
                 let nonce = Math.floor(new Date().getTime()) / 1000;
                 let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
