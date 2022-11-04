@@ -245,7 +245,13 @@ describe("DBS Arweave Upload", function () {
                     "approveAddress"
                 );
 
-                await (await goerliToken.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+                try {
+                    await (await goerliToken.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+                }
+                catch(err) {
+                    console.log("goerliToken error");
+                    console.log(err);
+                }
 
                 let nonce = Math.floor(new Date().getTime()) / 1000;
                 let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
