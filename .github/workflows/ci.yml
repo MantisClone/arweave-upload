@@ -51,3 +51,4 @@ jobs:
         MAX_UPLOAD_SIZE: 1099511627776
         # Test env var
         TEST_PRIVATE_KEY: ${{ secrets.TEST_PRIVATE_KEY }}
+        ENABLE_EXPENSIVE_TESTS: false
