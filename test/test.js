@@ -220,6 +220,55 @@ describe("DBS Arweave Upload", function () {
                     "transactionHash"
                 );
             });
+
+            it("upload, with large file, should successfully upload file to arweave", async function() {
+                const timeoutSeconds = 3600;
+                this.timeout(timeoutSeconds * 1000);
+
+                const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
+                    type: "arweave",
+                    userAddress: userWallet.address,
+                    files: [{length: 1103811824}], // 1.1 GB mp4 video, sha256 = 964101726e2191d094fc4d567e60d2171a93b18430b729c68293e5e93fd8585d
+                    payment: {
+                        chainId: 80001,
+                        tokenAddress: "0x0000000000000000000000000000000000001010",
+                    },
+                });
+                const quote = quoteResponse.data;
+
+                try {
+                    await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
+                }
+                catch(err) {
+                    console.log("Unable to fund");
+                    return;
+                }
+
+                let nonce = Math.floor(new Date().getTime()) / 1000;
+                let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                let signature = await userWallet.signMessage(message);
+                const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
+                    quoteId: quote.quoteId,
+                    files: ["ipfs://QmPySemsQXoqMe4jyk9PiJ494jxB3dRL8kekrg9tD64btv"],
+                    nonce: nonce,
+                    signature: signature,
+                });
+                expect(uploadResponse.status).equals(200);
+                expect(uploadResponse.data).equals('');
+
+                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
+                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
+
+                nonce = Math.floor(new Date().getTime()) / 1000;
+                message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
+                signature = await userWallet.signMessage(message);
+                const getLinkResponse = await axios.get(`http://localhost:8081/getLink?quoteId=${quote.quoteId}&nonce=${nonce}&signature=${signature}`);
+                expect(getLinkResponse.status).to.equal(200);
+                expect(getLinkResponse.data[0]).contains.all.keys(
+                    "type",
+                    "transactionHash"
+                );
+            });
         });
     });
 });
