@@ -224,7 +224,7 @@ describe("DBS Arweave Upload", function () {
             it("upload, with large file, should successfully upload file to arweave", async function() {
                 console.log(`process.env.ENABLE_EXPENSIVE_TESTS`);
                 console.log(process.env.ENABLE_EXPENSIVE_TESTS);
-                if (process.env.ENABLE_EXPENSIVE_TESTS) {
+                if (process.env.ENABLE_EXPENSIVE_TESTS == true) {
                     const timeoutSeconds = 3600;
                     this.timeout(timeoutSeconds * 1000);
 
