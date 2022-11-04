@@ -135,13 +135,6 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	// see if token still accepted
-	const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
-	if(!paymentToken) {
-		errorResponse(req, res, null, 400, "Payment token no longer accepted.");
-		return;
-	}
-
 	// check status of quote
 	if(quote.status != Quote.QUOTE_STATUS_WAITING) {
 		if(quote.status == Quote.QUOTE_STATUS_UPLOAD_END) {
@@ -154,16 +147,39 @@ exports.upload = async (req, res) => {
 		}
 	}
 
-	// check if new price is sufficient
+	// see if token still accepted
+	const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
+	if(!paymentToken) {
+		errorResponse(req, res, null, 400, "Payment token no longer accepted.");
+		return;
+	}
+
+	// Get providerUri from environment, fallback to tokens.providerUrl
+	const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+	const nodeRpcUris = process.env.NODE_RPC_URIS.split(",");
+	const jsonRpcUri = nodeRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
+	let providerUri;
+	if(jsonRpcUri === "default") {
+		console.log(`Using "default" provider url from tokens.js = ${paymentToken.providerUrl}`);
+		providerUri = paymentToken.providerUrl;
+	}
+	else {
+		console.log(`Using provider url from envvar NODE_RPC_URIS = ${jsonRpcUri}`);
+		providerUri = jsonRpcUri;
+	}
+
+	// Create Bundlr instance
 	let bundlr;
 	try {
-		const bundlrConfig = paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {};
+		const bundlrConfig = { providerUrl: providerUri };
 		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, bundlrConfig);
 	}
 	catch(err) {
 		errorResponse(req, res, err, 500, "Could not establish connection to payment processor.");
 		return;
 	}
+
+	// check if new price is sufficient
 	let bundlrPriceWei;
 	let priceWei;
 	try {
@@ -183,18 +199,7 @@ exports.upload = async (req, res) => {
 	// Create provider
 	let provider;
 	try {
-		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
-		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
-		if(jsonRpcUri === "default") {
-			const defaultProviderUrl = paymentToken.providerUrl;
-			console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
-			provider = ethers.getDefaultProvider(defaultProviderUrl);
-		}
-		else {
-			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
-			provider = ethers.getDefaultProvider(jsonRpcUri);
-		}
+		provider = ethers.getDefaultProvider(providerUri);
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 	}
 	catch(err) {

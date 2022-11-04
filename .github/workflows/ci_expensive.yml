@@ -37,7 +37,7 @@ jobs:
       env:
         # Server env vars
         ACCEPTED_PAYMENTS: ethereum,matic,boba,boba-eth
-        JSON_RPC_URIS: default,default,default,default
+        NODE_RPC_URIS: default,default,default,default
         BUNDLR_URI: https://devnet.bundlr.network
         PORT: 8081
         PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}

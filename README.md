@@ -6,7 +6,7 @@ Arweave microservice for DBS
 ```bash
 npm install
 export ACCEPTED_PAYMENTS=ethereum,matic,boba,boba-eth
-export JSON_RPC_URIS=default,default,default,default
+export NODE_RPC_URIS=default,default,default,default
 export BUNDLR_URI="https://node1.bundlr.network"
 #export BUNDLR_URI="https://devnet.bundlr.network" # Use Budnlr devnet when interacting with testnets
 export PORT=8081
