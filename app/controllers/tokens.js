@@ -14,13 +14,16 @@ const tokens =[
 
 getToken = (chainId, tokenAddress) => {
 	const accepted = process.env.ACCEPTED_PAYMENTS.split(",");
+	let acceptedToken;
 	tokens.forEach((token) => {
 		if(accepted.includes(token.bundlrName)) {
 			if(token.chainId == chainId && token.tokenAddress == tokenAddress) {
-				return token;
+				acceptedToken = token;
+				return;
 			}
 		}
 	});
+	return acceptedToken;
 };
 
 /**
