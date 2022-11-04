@@ -233,8 +233,8 @@ describe("DBS Arweave Upload", function () {
                     },
                 });
 
-                const quote = getQuoteResponse.data;
-                expect(getQuoteResponse.status).equals(200);
+                const quote = quoteResponse.data;
+                expect(quoteResponse.status).equals(200);
                 expect(quote).contains.all.keys(
                     "quoteId",
                     "chainId",
