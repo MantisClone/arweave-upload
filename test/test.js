@@ -217,64 +217,6 @@ describe("DBS Arweave Upload", function () {
                 );
             });
 
-
-            it("upload, via Goerli test network, after successful upload, should return a list of transaction IDs", async function() {
-                const goerliToken = new ethers.Contract("0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", abi, userWallet);
-
-                const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
-                    type: "arweave",
-                    userAddress: userWallet.address,
-                    files: [{length: 119762}, {length: 13}],
-                    payment: {
-                        chainId: 5,
-                        tokenAddress: "0x0000000000000000000000000000000000000000",
-                    },
-                });
-
-                const quote = quoteResponse.data;
-                expect(quoteResponse.status).equals(200);
-                expect(quote).contains.all.keys(
-                    "quoteId",
-                    "chainId",
-                    "tokenAddress",
-                    "tokenAmount",
-                    "approveAddress"
-                );
-
-                try {
-                    await (await goerliToken.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
-                }
-                catch(err) {
-                    console.log("goerliToken error");
-                    console.log(err);
-                }
-
-                let nonce = Math.floor(new Date().getTime()) / 1000;
-                let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
-                let signature = await userWallet.signMessage(message);
-                const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
-                    quoteId: quote.quoteId,
-                    files: ["ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
-                    nonce: nonce,
-                    signature: signature,
-                }).catch((err) => err.response);
-                expect(uploadResponse.status).equals(200);
-                expect(uploadResponse.data).equals('');
-
-                const status = await waitForUpload(timeoutSeconds, quote.quoteId);
-                expect(status).equals(Quote.QUOTE_STATUS_UPLOAD_END);
-
-                nonce = Math.floor(new Date().getTime()) / 1000;
-                message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
-                signature = await userWallet.signMessage(message);
-                const getLinkResponse = await axios.get(`http://localhost:8081/getLink?quoteId=${quote.quoteId}&nonce=${nonce}&signature=${signature}`);
-                expect(getLinkResponse.status).to.equal(200);
-                expect(getLinkResponse.data[0]).contains.all.keys(
-                    "type",
-                    "transactionHash"
-                );
-            });
-
             it("upload, with large file, should successfully upload file to arweave", async function() {
                 if (process.env.ENABLE_EXPENSIVE_TESTS == "true") {
                     const timeoutSeconds = 3600;
