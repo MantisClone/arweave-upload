@@ -237,13 +237,7 @@ describe("DBS Arweave Upload", function () {
                     });
                     const quote = quoteResponse.data;
 
-                    try {
-                        await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
-                    }
-                    catch(err) {
-                        console.log("Unable to fund");
-                        return;
-                    }
+                    await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
                     let nonce = Math.floor(new Date().getTime()) / 1000;
                     let message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
