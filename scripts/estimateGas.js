@@ -155,8 +155,8 @@ estimateGas = async (providerUrl, tokenAddress, bundlrAddress) => {
         if([80001, 5].includes(tokens[i].chainId)) {
             await estimateGas(
                 tokens[i].providerUrl,
-                tokens[i].wrappedAddress,
-                '0x853758425e953739F5438fd6fd0Efe04A477b039'
+                tokens[i].tokenAddress,
+                '0x853758425e953739F5438fd6fd0Efe04A477b039' // Bundlr Address
             );
         }
     }

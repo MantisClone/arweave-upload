@@ -8,7 +8,7 @@ exports.getQuote = async (wallet, size = 119762) => {
         files: [{length: size}, {length: 13}],
         payment: {
             chainId: 80001,
-            tokenAddress: "0x0000000000000000000000000000000000001010",
+            tokenAddress: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", // WMATIC on Mumbai
         },
     });
 }

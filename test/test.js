@@ -49,18 +49,16 @@ describe("DBS Arweave Upload", function () {
             'function approve(address, uint256) external returns (bool)',
             'function balanceOf(address owner) external view returns (uint256)'
         ];
-        // WMATIC on Mumbai (Polygon Testnet): https://mumbai.polygonscan.com/token/0x9c3c9283d3e44854697cd22d3faa240cfb032889
-        const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, userWallet);
 
         describe("without approval", function () {
 
             it("upload, without approval, should fail to pull funds from user account", async function() {
                 this.timeout(20 * 1000);
 
-                const userBalanceBefore = await token.balanceOf(userWallet.address);
-
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
+                const userBalanceBefore = await token.balanceOf(userWallet.address);
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
@@ -89,14 +87,17 @@ describe("DBS Arweave Upload", function () {
 
             afterEach("revoke approval", async function () {
                 const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+                // TODO: Get address from ENV var
+                // WMATIC on Mumbai (Polygon Testnet): https://mumbai.polygonscan.com/token/0x9c3c9283d3e44854697cd22d3faa240cfb032889
+                const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, userWallet);
                 await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
             });
 
             it("upload, with approval, should successfully pull funds from user account", async function() {
-                const userBalanceBefore = await token.balanceOf(userWallet.address);
-
                 const quoteResponse = await getQuote(userWallet);
                 const quote = quoteResponse.data;
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
+                const userBalanceBefore = await token.balanceOf(userWallet.address);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -125,6 +126,7 @@ describe("DBS Arweave Upload", function () {
 
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -159,8 +161,9 @@ describe("DBS Arweave Upload", function () {
                 const timeoutSeconds = 200;
                 this.timeout(timeoutSeconds * 1000);
 
-                const quoteResponse = await getQuote(userWallet);
+                const quoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = quoteResponse.data;
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -184,14 +187,7 @@ describe("DBS Arweave Upload", function () {
             it("getLink, after successful upload, should return a list of transaction IDs", async function() {
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
-                expect(getQuoteResponse.status).equals(200);
-                expect(quote).contains.all.keys(
-                    "quoteId",
-                    "chainId",
-                    "tokenAddress",
-                    "tokenAmount",
-                    "approveAddress"
-                );
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -226,16 +222,9 @@ describe("DBS Arweave Upload", function () {
                     const timeoutSeconds = 3600;
                     this.timeout(timeoutSeconds * 1000);
 
-                    const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
-                        type: "arweave",
-                        userAddress: userWallet.address,
-                        files: [{length: 1103811824}], // 1.1 GB mp4 video, sha256 = 964101726e2191d094fc4d567e60d2171a93b18430b729c68293e5e93fd8585d
-                        payment: {
-                            chainId: 80001,
-                            tokenAddress: "0x0000000000000000000000000000000000001010",
-                        },
-                    });
+                    const quoteResponse = await getQuote(wallet, 1103811824).catch((err) => err.response);
                     const quote = quoteResponse.data;
+                    const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                     await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -244,7 +233,8 @@ describe("DBS Arweave Upload", function () {
                     let signature = await userWallet.signMessage(message);
                     const uploadResponse = await axios.post(`http://localhost:8081/upload`, {
                         quoteId: quote.quoteId,
-                        files: ["ipfs://QmPySemsQXoqMe4jyk9PiJ494jxB3dRL8kekrg9tD64btv"],
+                        // 1.1 GB mp4 video, sha256 = 964101726e2191d094fc4d567e60d2171a93b18430b729c68293e5e93fd8585d
+                        files: ["ipfs://QmPySemsQXoqMe4jyk9PiJ494jxB3dRL8kekrg9tD64btv", "ipfs://QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"],
                         nonce: nonce,
                         signature: signature,
                     });
