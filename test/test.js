@@ -55,11 +55,10 @@ describe("DBS Arweave Upload", function () {
             it("upload, without approval, should fail to pull funds from user account", async function() {
                 this.timeout(20 * 1000);
 
-                const userBalanceBefore = await token.balanceOf(userWallet.address);
-
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
                 const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
+                const userBalanceBefore = await token.balanceOf(userWallet.address);
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
@@ -95,11 +94,10 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should successfully pull funds from user account", async function() {
-                const userBalanceBefore = await token.balanceOf(userWallet.address);
-
                 const quoteResponse = await getQuote(userWallet);
                 const quote = quoteResponse.data;
                 const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
+                const userBalanceBefore = await token.balanceOf(userWallet.address);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -163,7 +161,7 @@ describe("DBS Arweave Upload", function () {
                 const timeoutSeconds = 200;
                 this.timeout(timeoutSeconds * 1000);
 
-                const quoteResponse = await getQuote(userWallet);
+                const quoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = quoteResponse.data;
                 const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
@@ -224,7 +222,7 @@ describe("DBS Arweave Upload", function () {
                     const timeoutSeconds = 3600;
                     this.timeout(timeoutSeconds * 1000);
 
-                    const quoteResponse = await getQuote(wallet, 1103811824);
+                    const quoteResponse = await getQuote(wallet, 1103811824).catch((err) => err.response);
                     const quote = quoteResponse.data;
                     const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
