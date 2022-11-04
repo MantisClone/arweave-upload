@@ -5,6 +5,14 @@ const { getQuote, waitForUpload } = require("./test.helpers.js");
 const Quote = require("../app/models/quote.model.js");
 const { getToken } = require("../app/controllers/tokens.js");
 
+describe("test", function () {
+    it("it", function () {
+        console.log(process.env.CHAIN_ID);
+        console.log(process.env.TOKEN_ADDRESS);
+    });
+});
+
+
 describe("DBS Arweave Upload", function () {
     console.log(process.env.CHAIN_ID);
     console.log(process.env.TOKEN_ADDRESS);
