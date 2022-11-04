@@ -3,10 +3,10 @@
 
 name: Node.js CI (Expensive)
 
-on:
-  schedule:
-    - cron: '0 8 1 1,4,7,10 *' # 8:00 AM, Quarterly
-  workflow_dispatch:
+on: [workflow_dispatch]
+  # schedule:
+  #   - cron: '0 8 1 1,4,7,10 *' # 8:00 AM, Quarterly
+
 
 jobs:
   test:
