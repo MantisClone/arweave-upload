@@ -49,8 +49,6 @@ describe("DBS Arweave Upload", function () {
             'function approve(address, uint256) external returns (bool)',
             'function balanceOf(address owner) external view returns (uint256)'
         ];
-        // WMATIC on Mumbai (Polygon Testnet): https://mumbai.polygonscan.com/token/0x9c3c9283d3e44854697cd22d3faa240cfb032889
-        const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, userWallet);
 
         describe("without approval", function () {
 
@@ -61,6 +59,7 @@ describe("DBS Arweave Upload", function () {
 
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                 const nonce = Math.floor(new Date().getTime()) / 1000;
                 const message = ethers.utils.sha256(ethers.utils.toUtf8Bytes(quote.quoteId + nonce.toString()));
@@ -89,6 +88,9 @@ describe("DBS Arweave Upload", function () {
 
             afterEach("revoke approval", async function () {
                 const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+                // TODO: Get address from ENV var
+                // WMATIC on Mumbai (Polygon Testnet): https://mumbai.polygonscan.com/token/0x9c3c9283d3e44854697cd22d3faa240cfb032889
+                const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, userWallet);
                 await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
             });
 
@@ -97,6 +99,7 @@ describe("DBS Arweave Upload", function () {
 
                 const quoteResponse = await getQuote(userWallet);
                 const quote = quoteResponse.data;
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -125,6 +128,7 @@ describe("DBS Arweave Upload", function () {
 
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -161,6 +165,7 @@ describe("DBS Arweave Upload", function () {
 
                 const quoteResponse = await getQuote(userWallet);
                 const quote = quoteResponse.data;
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -184,14 +189,7 @@ describe("DBS Arweave Upload", function () {
             it("getLink, after successful upload, should return a list of transaction IDs", async function() {
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
-                expect(getQuoteResponse.status).equals(200);
-                expect(quote).contains.all.keys(
-                    "quoteId",
-                    "chainId",
-                    "tokenAddress",
-                    "tokenAmount",
-                    "approveAddress"
-                );
+                const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                 await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
@@ -236,6 +234,7 @@ describe("DBS Arweave Upload", function () {
                         },
                     });
                     const quote = quoteResponse.data;
+                    const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
 
                     await (await token.approve(quote.approveAddress, ethers.constants.MaxInt256)).wait();
 
