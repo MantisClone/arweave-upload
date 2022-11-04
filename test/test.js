@@ -5,7 +5,7 @@ const { getQuote, waitForUpload } = require("./test.helpers.js");
 const Quote = require("../app/models/quote.model.js");
 
 describe("DBS Arweave Upload", function () {
-    const provider = ethers.getDefaultProvider("https://rpc-mumbai.maticvigil.com/");
+    const provider = ethers.getDefaultProvider(process.env.CHAIN_ID);
     const userWallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, provider);
     console.log(`user wallet address: ${userWallet.address}`);
 
@@ -87,9 +87,7 @@ describe("DBS Arweave Upload", function () {
 
             afterEach("revoke approval", async function () {
                 const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-                // TODO: Get address from ENV var
-                // WMATIC on Mumbai (Polygon Testnet): https://mumbai.polygonscan.com/token/0x9c3c9283d3e44854697cd22d3faa240cfb032889
-                const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, userWallet);
+                const token = new ethers.Contract(process.env.TOKEN_ADDRESS, abi, userWallet);
                 await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
             });
 
