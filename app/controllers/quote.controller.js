@@ -4,7 +4,7 @@ const ethers = require('ethers');
 
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
-const { acceptToken } = require("./tokens.js");
+const { getToken } = require("./tokens.js");
 const { errorResponse } = require("./error.js");
 const { gasEstimate } = require("./gasEstimate.js");
 
@@ -144,7 +144,7 @@ exports.create = async (req, res) => {
 		return;
 	}
 
-	const paymentToken = acceptToken(chainId, tokenAddress);
+	const paymentToken = getToken(chainId, tokenAddress);
 	if(!paymentToken) {
 		errorResponse(req, res, null, 400, "Payment token not accepted.");
 		return;

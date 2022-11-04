@@ -12,20 +12,15 @@ const tokens =[
 	{bundlrName: "ethereum", chainId: 5, symbol: "ETH", providerUrl: "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161", tokenAddress: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", confirms: 1},
 ];
 
-acceptToken = (chainId, tokenAddress) => {
+getToken = (chainId, tokenAddress) => {
 	const accepted = process.env.ACCEPTED_PAYMENTS.split(",");
-
-	let acceptToken = false;
 	tokens.forEach((token) => {
 		if(accepted.includes(token.bundlrName)) {
 			if(token.chainId == chainId && token.tokenAddress == tokenAddress) {
-				acceptToken = token;
-				return;
+				return token;
 			}
 		}
 	});
-
-	return acceptToken;
 };
 
 /**
@@ -55,4 +50,4 @@ getAcceptedPaymentDetails = () => {
 	return compressedDetails;
 };
 
-module.exports = { tokens, acceptToken, getAcceptedPaymentDetails };
+module.exports = { tokens, getToken, getAcceptedPaymentDetails };

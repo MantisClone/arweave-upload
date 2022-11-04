@@ -5,7 +5,7 @@ const File = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
-const { acceptToken } = require("./tokens.js");
+const { getToken } = require("./tokens.js");
 const { errorResponse } = require("./error.js");
 const { gasEstimate } = require("./gasEstimate.js");
 
@@ -148,7 +148,7 @@ exports.upload = async (req, res) => {
 	}
 
 	// see if token still accepted
-	const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
+	const paymentToken = getToken(quote.chainId, quote.tokenAddress);
 	if(!paymentToken) {
 		errorResponse(req, res, null, 400, "Payment token no longer accepted.");
 		return;
