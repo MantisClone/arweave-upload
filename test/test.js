@@ -226,7 +226,7 @@ describe("DBS Arweave Upload", function () {
                 const quoteResponse = await axios.post(`http://localhost:8081/getQuote`, {
                     type: "arweave",
                     userAddress: userWallet.address,
-                    files: [{length: size}, {length: 13}],
+                    files: [{length: 119762}, {length: 13}],
                     payment: {
                         chainId: 5,
                         tokenAddress: "0x0000000000000000000000000000000000000000",
