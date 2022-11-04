@@ -6,12 +6,10 @@ const tokens =[
 	{bundlrName: "bnb", chainId: 56, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BNB", providerUrl: "https://bsc-dataseed.binance.org", wrappedAddress: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", confirms: 1},
 	{bundlrName: "arbitrum", chainId: 42161, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://arb1.arbitrum.io/rpc", wrappedAddress: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", confirms: 1},
 	{bundlrName: "avalanche", chainId: 43114, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "AVAX", providerUrl: "https://api.avax.network/ext/bc/C/rpc", wrappedAddress: "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB", confirms: 1},
-	{bundlrName: "boba", chainId: 288, tokenAddress: "0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7", symbol: "ETH", providerUrl: "https://mainnet.boba.network/", confirms: 1},
 	{bundlrName: "boba-eth", chainId: 288, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "BOBA", providerUrl: "https://mainnet.boba.network/", wrappedAddress: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000", confirms: 1},
 	// Testnets, used with devnet Bundlr URI. See for details: https://docs.bundlr.network/docs/devnet
 	{bundlrName: "matic", chainId: 80001, tokenAddress: "0x0000000000000000000000000000000000001010", symbol: "MATIC", providerUrl: "https://rpc-mumbai.maticvigil.com/", wrappedAddress: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", confirms: 1},
 	{bundlrName: "ethereum", chainId: 5, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161", wrappedAddress: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", confirms: 1},
-	{bundlrName: "arbitrum", chainId: 421613, tokenAddress: "0x0000000000000000000000000000000000000000", symbol: "ETH", providerUrl: "https://goerli-rollup.arbitrum.io/rpc", wrappedAddress: "???", confirms: 1}
 ];
 
 acceptToken = (chainId, tokenAddress) => {
