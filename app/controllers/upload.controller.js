@@ -5,7 +5,7 @@ const File = require("../models/upload.model.js");
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
 const ethers = require('ethers');
-const { acceptToken } = require("./tokens.js");
+const { getToken } = require("./tokens.js");
 const { errorResponse } = require("./error.js");
 const { gasEstimate } = require("./gasEstimate.js");
 
@@ -135,13 +135,6 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	// see if token still accepted
-	const paymentToken = acceptToken(quote.chainId, quote.tokenAddress);
-	if(!paymentToken) {
-		errorResponse(req, res, null, 400, "Payment token no longer accepted.");
-		return;
-	}
-
 	// check status of quote
 	if(quote.status != Quote.QUOTE_STATUS_WAITING) {
 		if(quote.status == Quote.QUOTE_STATUS_UPLOAD_END) {
@@ -154,16 +147,39 @@ exports.upload = async (req, res) => {
 		}
 	}
 
-	// check if new price is sufficient
+	// see if token still accepted
+	const paymentToken = getToken(quote.chainId, quote.tokenAddress);
+	if(!paymentToken) {
+		errorResponse(req, res, null, 400, "Payment token no longer accepted.");
+		return;
+	}
+
+	// Get providerUri from environment, fallback to tokens.providerUrl
+	const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+	const nodeRpcUris = process.env.NODE_RPC_URIS.split(",");
+	const jsonRpcUri = nodeRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
+	let providerUri;
+	if(jsonRpcUri === "default") {
+		console.log(`Using "default" provider url from tokens.js = ${paymentToken.providerUrl}`);
+		providerUri = paymentToken.providerUrl;
+	}
+	else {
+		console.log(`Using provider url from envvar NODE_RPC_URIS = ${jsonRpcUri}`);
+		providerUri = jsonRpcUri;
+	}
+
+	// Create Bundlr instance
 	let bundlr;
 	try {
-		const bundlrConfig = paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {};
+		const bundlrConfig = { providerUrl: providerUri };
 		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, bundlrConfig);
 	}
 	catch(err) {
 		errorResponse(req, res, err, 500, "Could not establish connection to payment processor.");
 		return;
 	}
+
+	// check if new price is sufficient
 	let bundlrPriceWei;
 	let priceWei;
 	try {
@@ -183,18 +199,7 @@ exports.upload = async (req, res) => {
 	// Create provider
 	let provider;
 	try {
-		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
-		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
-		if(jsonRpcUri === "default") {
-			const defaultProviderUrl = paymentToken.providerUrl;
-			console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
-			provider = ethers.getDefaultProvider(defaultProviderUrl);
-		}
-		else {
-			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
-			provider = ethers.getDefaultProvider(jsonRpcUri);
-		}
+		provider = ethers.getDefaultProvider(providerUri);
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 	}
 	catch(err) {
@@ -223,7 +228,7 @@ exports.upload = async (req, res) => {
 			'function withdraw(uint256 value) external',
 			'function transfer(address to, uint256 value) external returns (bool)'
 		];
-		const tokenAddress = paymentToken?.wrappedAddress || paymentToken.tokenAddress ;
+		const tokenAddress = paymentToken.tokenAddress;
 		token = new ethers.Contract(tokenAddress, abi, wallet);
 		console.log(`payment token address = ${token.address}`);
 	}
@@ -329,21 +334,19 @@ exports.upload = async (req, res) => {
 		return;
 	}
 
-	// If payment is wrapped, unwrap it (ex. WETH -> ETH)
-	if(paymentToken.wrappedAddress) {
+	// Unwrap payment token (ex. WETH -> ETH)
+	try {
+		await (await token.withdraw(priceWei)).wait(confirms);
+	}
+	catch(err) {
+		console.error(`Error occurred while unwrapping payment: ${err?.name}: ${err?.message}`);
 		try {
-			await (await token.withdraw(priceWei)).wait(confirms);
+			Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED);
 		}
 		catch(err) {
-			console.error(`Error occurred while unwrapping payment: ${err?.name}: ${err?.message}`);
-			try {
-				Quote.setStatus(quoteId, Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED);
-			}
-			catch(err) {
-				console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED: ${err?.name}: ${err?.message}`);
-			}
-			return;
+			console.error(`Error occurred while setting status to Quote.QUOTE_STATUS_PAYMENT_UNWRAP_FAILED: ${err?.name}: ${err?.message}`);
 		}
+		return;
 	}
 
 	try {

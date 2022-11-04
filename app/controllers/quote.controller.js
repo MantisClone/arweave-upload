@@ -4,7 +4,7 @@ const ethers = require('ethers');
 
 const Quote = require("../models/quote.model.js");
 const Nonce = require("../models/nonce.model.js");
-const { acceptToken } = require("./tokens.js");
+const { getToken } = require("./tokens.js");
 const { errorResponse } = require("./error.js");
 const { gasEstimate } = require("./gasEstimate.js");
 
@@ -144,15 +144,30 @@ exports.create = async (req, res) => {
 		return;
 	}
 
-	const paymentToken = acceptToken(chainId, tokenAddress);
+	const paymentToken = getToken(chainId, tokenAddress);
 	if(!paymentToken) {
 		errorResponse(req, res, null, 400, "Payment token not accepted.");
 		return;
 	}
 
+	// Get providerUri from environment, fallback to tokens.providerUrl
+	const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
+	const nodeRpcUris = process.env.NODE_RPC_URIS.split(",");
+	const jsonRpcUri = nodeRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
+	let providerUri;
+	if(jsonRpcUri === "default") {
+		console.log(`Using "default" provider url (from tokens) = ${paymentToken.providerUrl}`);
+		providerUri = paymentToken.providerUrl;
+	}
+	else {
+		console.log(`Using provider url from envvar NODE_RPC_URIS = ${jsonRpcUri}`);
+		providerUri = jsonRpcUri;
+	}
+
+	// Create Bundlr instance
 	let bundlr;
 	try {
-		const bundlrConfig = paymentToken.providerUrl ? {providerUrl: paymentToken.providerUrl, contractAddress: paymentToken.tokenAddress} : {};
+		const bundlrConfig = { providerUrl: providerUri };
 		bundlr = new Bundlr.default(process.env.BUNDLR_URI, paymentToken.bundlrName, process.env.PRIVATE_KEY, bundlrConfig);
 	}
 	catch(err) {
@@ -160,10 +175,12 @@ exports.create = async (req, res) => {
 		return;
 	}
 
+	// Get price estimate from Bundlr
+	let bundlrPriceWei;
 	let priceWei;
 	try {
-		priceWei = await bundlr.getPrice(totalLength);
-		priceWei = ethers.BigNumber.from(priceWei.toString(10)); // need to convert so we can add buffer
+		bundlrPriceWei = await bundlr.getPrice(totalLength);
+		priceWei = ethers.BigNumber.from(bundlrPriceWei.toString(10)); // need to convert so we can add buffer
 	}
 	catch(err) {
 		errorResponse(req, res, err, 500, "Unable to get price from payment processor.");
@@ -174,18 +191,7 @@ exports.create = async (req, res) => {
 	// Create provider
 	let provider;
 	try {
-		const acceptedPayments = process.env.ACCEPTED_PAYMENTS.split(",");
-		const jsonRpcUris = process.env.JSON_RPC_URIS.split(",");
-		const jsonRpcUri = jsonRpcUris[acceptedPayments.indexOf(paymentToken.bundlrName)];
-		if(jsonRpcUri === "default") {
-			const defaultProviderUrl = paymentToken.providerUrl;
-			console.log(`Using "default" provider url (from tokens) = ${defaultProviderUrl}`);
-			provider = ethers.getDefaultProvider(defaultProviderUrl);
-		}
-		else {
-			console.log(`Using provider url from JSON_RPC_URIS = ${jsonRpcUri}`);
-			provider = ethers.getDefaultProvider(jsonRpcUri);
-		}
+		provider = ethers.getDefaultProvider(providerUri);
 		console.log(`network = ${JSON.stringify(await provider.getNetwork())}`);
 	}
 	catch(err) {
@@ -243,7 +249,7 @@ exports.create = async (req, res) => {
 		status: Quote.QUOTE_STATUS_WAITING,
 		created: Date.now(),
 		chainId: chainId,
-		tokenAddress: tokenAddress,
+		tokenAddress: paymentToken.tokenAddress,
 		userAddress: userAddress,
 		tokenAmount: tokenAmount.add(feeEstimate).toString(),
 		approveAddress: wallet.address,

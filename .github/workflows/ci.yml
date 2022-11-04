@@ -34,11 +34,11 @@ jobs:
       run: |
         npm start 2>&1 &
         sleep 2
-        npm test -- -grep "Goerli"
+        npm test
       env:
         # Server env vars
-        ACCEPTED_PAYMENTS: ethereum,matic,boba,boba-eth
-        JSON_RPC_URIS: default,default,default,default
+        ACCEPTED_PAYMENTS: ethereum,matic
+        NODE_RPC_URIS: default,default
         BUNDLR_URI: https://devnet.bundlr.network
         PORT: 8081
         PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}

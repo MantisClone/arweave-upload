@@ -8,14 +8,14 @@ const checkConfig = () => {
 	}
 	const payments = acceptedPayments.split(",");
 
-	const jsonRpcUris = process.env.JSON_RPC_URIS;
-	if(jsonRpcUris == null) {
-		console.log("JSON_RPC_URIS environment variable not set");
+	const nodeRpcUris = process.env.NODE_RPC_URIS;
+	if(nodeRpcUris == null) {
+		console.log("NODE_RPC_URIS environment variable not set");
 		return false;
 	}
-	const uris = jsonRpcUris.split(",");
+	const uris = nodeRpcUris.split(",");
 	if(uris.length != payments.length) {
-		console.log("ACCEPTED_PAYMENTS and JSON_RPC_URIS environment variables do not have the same number of entries");
+		console.log("ACCEPTED_PAYMENTS and NODE_RPC_URIS environment variables do not have the same number of entries");
 		console.log(uris);
 		console.log(payments);
 		return false;
@@ -26,12 +26,12 @@ const checkConfig = () => {
 			try {
 				url = new URL(uris[i]);
 				if(url.protocol != "http:" && url.protocol != "https:") { // do we allow wss://?
-					console.log("each JSON_RPC_URIS should be http or https");
+					console.log("each NODE_RPC_URIS should be http or https");
 					return false;
 				}
 			}
 			catch(err) {
-				console.log("One of the JSON_RPC_URIS is invalid");
+				console.log("One of the NODE_RPC_URIS is invalid");
 				return false;
 			}
 		}
