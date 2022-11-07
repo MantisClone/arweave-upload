@@ -14,8 +14,9 @@ describe("test", function () {
 
 
 describe("DBS Arweave Upload", function () {
-    console.log(process.env.CHAIN_ID);
-    console.log(process.env.TOKEN_ADDRESS);
+    //console.log(process.env.CHAIN_ID);
+    //console.log(process.env.TOKEN_ADDRESS);
+    expect(process.env.CHAIN_ID).equals(80001);
     const providerUri = getToken(parseInt(process.env.CHAIN_ID), process.env.TOKEN_ADDRESS).providerUrl;
     const provider = ethers.getDefaultProvider(providerUri);
     const userWallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, provider);
