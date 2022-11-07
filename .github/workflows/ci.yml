@@ -57,5 +57,5 @@ jobs:
         # Test env var
         TEST_PRIVATE_KEY: ${{ secrets.TEST_PRIVATE_KEY }}
         ENABLE_EXPENSIVE_TESTS: false
-        CHAIN_ID: ${{ matrix.payment.chain-id }}
-        TOKEN_ADDRESS: ${{ matrix.payment.token-address }}
+        CHAIN_ID: ${{ matrix.payment.chainId }}
+        TOKEN_ADDRESS: ${{ matrix.payment.tokenAddress }}
