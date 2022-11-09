@@ -19,7 +19,7 @@ Arguments:
                 {"length":2343545},
                 {"length":2343545},
             ],
-    "duration": 4353545453
+    "duration": 4353545453,
     "payment": {
         "chainId": 1,
         "tokenAddress": "0xWETH_on_ETHERUEM"
@@ -70,8 +70,10 @@ Input:
     "quoteId": "23",
     "nonce": 12345.12345,
     "signature": "0x2222",
-    "files":[
-        "ipfs://xxxx","ipfs://yyyy"]
+    "files": [
+        "ipfs://xxxx",
+        "ipfs://yyyy"
+    ]
 }
 ```
 
@@ -89,7 +91,7 @@ Returns:
 
 ```json
 {
-    "status": 0,
+    "status": 0
 }
 ```
 
@@ -133,7 +135,7 @@ Returns:
 [
     {
        "type": "arweave",
-       "transactionHash": "xxxx",
+       "transactionHash": "xxxx"
     }
 ]
 ```
