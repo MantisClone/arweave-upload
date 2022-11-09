@@ -176,6 +176,12 @@ const checkConfig = () => {
 		return false;
 	}
 
+	const priceBuffer = process.env.PRICE_BUFFER;
+	if(priceBuffer != null && isNaN(priceBuffer)) {
+		console.log("PRICE_BUFFER environment variable should be a number");
+		return false;
+	}
+
 	return true;
 };
 

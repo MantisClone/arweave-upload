@@ -3,9 +3,12 @@ const axios = require("axios");
 const { expect } = require("chai");
 const { getQuote, waitForUpload } = require("./test.helpers.js");
 const Quote = require("../app/models/quote.model.js");
+const { getToken } = require("../app/controllers/tokens.js");
+
 
 describe("DBS Arweave Upload", function () {
-    const provider = ethers.getDefaultProvider("https://rpc-mumbai.maticvigil.com/");
+    const providerUri = getToken(parseInt(process.env.CHAIN_ID), process.env.TOKEN_ADDRESS).providerUrl;
+    const provider = ethers.getDefaultProvider(providerUri);
     const userWallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, provider);
     console.log(`user wallet address: ${userWallet.address}`);
 
@@ -82,14 +85,12 @@ describe("DBS Arweave Upload", function () {
         });
 
         describe("with approval", function () {
-            const timeoutSeconds = 100;
+            const timeoutSeconds = 200;
             this.timeout(timeoutSeconds * 1000);
 
             afterEach("revoke approval", async function () {
                 const serverWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-                // TODO: Get address from ENV var
-                // WMATIC on Mumbai (Polygon Testnet): https://mumbai.polygonscan.com/token/0x9c3c9283d3e44854697cd22d3faa240cfb032889
-                const token = new ethers.Contract("0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", abi, userWallet);
+                const token = new ethers.Contract(process.env.TOKEN_ADDRESS, abi, userWallet);
                 await (await token.approve(serverWallet.address, ethers.BigNumber.from(0))).wait();
             });
 
@@ -121,9 +122,6 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should respond 403 when nonce is old", async function() {
-                const timeoutSeconds = 100;
-                this.timeout(timeoutSeconds * 1000);
-
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
                 const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
@@ -158,7 +156,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should fail when invalid IPFS URI", async function() {
-                const timeoutSeconds = 200;
+                const timeoutSeconds = 300;
                 this.timeout(timeoutSeconds * 1000);
 
                 const quoteResponse = await getQuote(userWallet).catch((err) => err.response);

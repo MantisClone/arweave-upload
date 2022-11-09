@@ -186,7 +186,9 @@ exports.create = async (req, res) => {
 		errorResponse(req, res, err, 500, "Unable to get price from payment processor.");
 		return;
 	}
-	const tokenAmount = priceWei.add(priceWei.div(10)); // add 10% buffer since prices fluctuate
+
+	// add buffer since price fluctuates
+	const tokenAmount = priceWei.add(priceWei.div(process.env.PRICE_BUFFER ?? 10));
 
 	// Create provider
 	let provider;
