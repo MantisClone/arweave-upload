@@ -85,7 +85,7 @@ describe("DBS Arweave Upload", function () {
         });
 
         describe("with approval", function () {
-            const timeoutSeconds = 100;
+            const timeoutSeconds = 200;
             this.timeout(timeoutSeconds * 1000);
 
             afterEach("revoke approval", async function () {
@@ -122,9 +122,6 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should respond 403 when nonce is old", async function() {
-                const timeoutSeconds = 200;
-                this.timeout(timeoutSeconds * 1000);
-
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
                 const quote = getQuoteResponse.data;
                 const token = new ethers.Contract(quote.tokenAddress, abi, userWallet);
