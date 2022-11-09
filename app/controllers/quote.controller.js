@@ -90,7 +90,7 @@ exports.create = async (req, res) => {
 				errorResponse(req, res, null, 400, "Files length too small.");
 				return;
 			}
-			if(file_length > process.env.MAX_UPLOAD_SIZE) {
+			if(process.env.MAX_UPLOAD_SIZE > 0 && file_length > process.env.MAX_UPLOAD_SIZE) {
 				errorResponse(req, res, null, 400, `Individual files may not exceed ${process.env.MAX_UPLOAD_SIZE} bytes`);
 				return;
 			}
@@ -99,7 +99,7 @@ exports.create = async (req, res) => {
 		file_lengths.push(file_length);
 	}
 
-	if(totalLength > process.env.MAX_UPLOAD_SIZE) {
+	if(process.env.MAX_UPLOAD_SIZE > 0 && totalLength > process.env.MAX_UPLOAD_SIZE) {
 		errorResponse(req, res, null, 400, `Total file length may not exceed ${process.env.MAX_UPLOAD_SIZE} bytes`);
 		return;
 	}
@@ -186,9 +186,11 @@ exports.create = async (req, res) => {
 		errorResponse(req, res, err, 500, "Unable to get price from payment processor.");
 		return;
 	}
+	console.log(`priceWei = ${priceWei}`);
 
 	// add buffer since price fluctuates
-	const tokenAmount = priceWei.add(priceWei.div(process.env.PRICE_BUFFER ?? 10));
+	const uploadFeePlusBuffer = priceWei.add(priceWei.div(process.env.BUNDLR_PRICE_BUFFER ?? 10));
+	console.log(`uploadFeePlusBuffer = ${uploadFeePlusBuffer}`);
 
 	// Create provider
 	let provider;
@@ -220,8 +222,11 @@ exports.create = async (req, res) => {
 		return;
 	}
 	// Assume all payment chains support EIP-1559 transactions.
-	const feeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
-	console.log(`feeEstimate = ${feeEstimate}`);
+	const gasFeeEstimate = gasEstimate.mul(feeData.maxFeePerGas.add(feeData.maxPriorityFeePerGas));
+	console.log(`gasFeeEstimate = ${gasFeeEstimate}`);
+
+	const gasFeePlusBuffer = gasFeeEstimate.add(gasFeeEstimate.div(process.env.GAS_PRICE_BUFFER ?? 10));
+	console.log(`gasFeePlusBuffer = ${gasFeePlusBuffer}`);
 
 	// Check server fee token balance exeeds fee estimate
 	let feeTokenBalance;
@@ -233,11 +238,11 @@ exports.create = async (req, res) => {
 		return;
 	}
 	console.log(`feeTokenBalance = ${feeTokenBalance}`);
-	if(feeEstimate.gte(feeTokenBalance)) {
+	if(gasFeePlusBuffer.gte(feeTokenBalance)) {
 		errorResponse(
 			req,
 			res,
-			`Estimated fees exceed server native fee token reserves. feeTokenSymbol: ${paymentToken.symbol} feeEstimate: ${feeEstimate}, feeTokenBalance: ${feeTokenBalance}`,
+			`Estimated fees exceed server native fee token reserves. feeTokenSymbol: ${paymentToken.symbol} feeEstimate: ${gasFeeEstimate}, feeTokenBalance: ${feeTokenBalance}`,
 			503,
 			`Server is unable to process payments at this time. Please try again later.`);
 		return;
@@ -253,7 +258,7 @@ exports.create = async (req, res) => {
 		chainId: chainId,
 		tokenAddress: paymentToken.tokenAddress,
 		userAddress: userAddress,
-		tokenAmount: tokenAmount.add(feeEstimate).toString(),
+		tokenAmount: uploadFeePlusBuffer.add(gasFeePlusBuffer).toString(),
 		approveAddress: wallet.address,
 		files: file_lengths
 	});

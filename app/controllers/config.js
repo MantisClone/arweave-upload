@@ -176,9 +176,15 @@ const checkConfig = () => {
 		return false;
 	}
 
-	const priceBuffer = process.env.PRICE_BUFFER;
-	if(priceBuffer != null && isNaN(priceBuffer)) {
-		console.log("PRICE_BUFFER environment variable should be a number");
+	const bundlrPriceBuffer = process.env.BUNDLR_PRICE_BUFFER;
+	if(bundlrPriceBuffer != null && isNaN(bundlrPriceBuffer)) {
+		console.log("BUNDLR_PRICE_BUFFER environment variable should be a number");
+		return false;
+	}
+
+	const gasPriceBuffer = process.env.GAS_PRICE_BUFFER;
+	if(gasPriceBuffer != null && isNaN(gasPriceBuffer)) {
+		console.log("GAS_PRICE_BUFFER environment variable should be a number");
 		return false;
 	}
 
