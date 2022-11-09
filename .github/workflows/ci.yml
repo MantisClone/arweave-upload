@@ -54,6 +54,7 @@ jobs:
         IPFS_GATEWAY: https://cloudflare-ipfs.com/ipfs/
         ARWEAVE_GATEWAY: https://arweave.net/
         MAX_UPLOAD_SIZE: 1099511627776
+        PRICE_BUFFER: 20
         # Test env var
         TEST_PRIVATE_KEY: ${{ secrets.TEST_PRIVATE_KEY }}
         ENABLE_EXPENSIVE_TESTS: false
