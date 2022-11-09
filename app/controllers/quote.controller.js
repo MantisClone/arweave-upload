@@ -90,7 +90,7 @@ exports.create = async (req, res) => {
 				errorResponse(req, res, null, 400, "Files length too small.");
 				return;
 			}
-			if(file_length > process.env.MAX_UPLOAD_SIZE) {
+			if(process.env.MAX_UPLOAD_SIZE > 0 && file_length > process.env.MAX_UPLOAD_SIZE) {
 				errorResponse(req, res, null, 400, `Individual files may not exceed ${process.env.MAX_UPLOAD_SIZE} bytes`);
 				return;
 			}
@@ -99,7 +99,7 @@ exports.create = async (req, res) => {
 		file_lengths.push(file_length);
 	}
 
-	if(totalLength > process.env.MAX_UPLOAD_SIZE) {
+	if(process.env.MAX_UPLOAD_SIZE > 0 && totalLength > process.env.MAX_UPLOAD_SIZE) {
 		errorResponse(req, res, null, 400, `Total file length may not exceed ${process.env.MAX_UPLOAD_SIZE} bytes`);
 		return;
 	}
