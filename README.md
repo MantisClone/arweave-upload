@@ -221,25 +221,30 @@ server's gas fees.
 
 ```bash
 export TEST_PRIVATE_KEY="0000000000000000000000000000000000000000000000000000000000000000"
-export ENABLE_EXPENSIVE_TESTS=false
+export ENABLE_EXPENSIVE_TESTS="false"
 
 npm test
 ```
 
 ### Automated tests
 
-This repo uses Github Actions to run the tests. The tests use public testnets:
+This repo uses Github Actions to run the tests.
 
-* Goerli
-* Mumbai
+The tests use public testnets: Goerli and Mumbai
 
-Tests: https://github.com/MantisClone/arweave-upload/blob/main/test
-Config: https://github.com/MantisClone/arweave-upload/blob/main/.github/workflows/ci.yml
+> **Warning**
+> Don't run multiple instances of the tests at the same time. It will cause
+> race conditions with token approvals.
+
+* Tests: https://github.com/MantisClone/arweave-upload/blob/main/test
+* Config: https://github.com/MantisClone/arweave-upload/blob/main/.github/workflows/ci.yml
 
 ### Expensive, large upload test
 
 The large upload test is run periodically (quarterly) via Github Actions. It
 requires over 4 WMATIC in the client account (TEST_PRIVATE_KEY).
+
+* Config: https://github.com/MantisClone/arweave-upload/blob/main/.github/workflows/ci_expensive.yml
 
 ## Example Curl Commands
 

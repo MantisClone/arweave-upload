@@ -56,6 +56,6 @@ jobs:
         MAX_UPLOAD_SIZE: 1099511627776
         # Test env var
         TEST_PRIVATE_KEY: ${{ secrets.TEST_PRIVATE_KEY }}
-        ENABLE_EXPENSIVE_TESTS: false
+        ENABLE_EXPENSIVE_TESTS: "false"
         CHAIN_ID: ${{ matrix.payment.chainId }}
         TOKEN_ADDRESS: ${{ matrix.payment.tokenAddress }}
