@@ -129,7 +129,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should respond 403 when nonce is old", async function() {
-                const timeoutSeconds = 100;
+                const timeoutSeconds = 200;
                 this.timeout(timeoutSeconds * 1000);
 
                 const getQuoteResponse = await getQuote(userWallet).catch((err) => err.response);
@@ -166,7 +166,7 @@ describe("DBS Arweave Upload", function () {
             });
 
             it("upload, with approval, should fail when invalid IPFS URI", async function() {
-                const timeoutSeconds = 200;
+                const timeoutSeconds = 300;
                 this.timeout(timeoutSeconds * 1000);
 
                 const quoteResponse = await getQuote(userWallet).catch((err) => err.response);
