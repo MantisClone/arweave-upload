@@ -1,3 +1,6 @@
+> **Warning**
+> This repository is archived. For continued development see: https://github.com/MantisClone/dbs_arweave
+
 # dbs_arweave
 
 A microservice for uploading files to Arweave. To be used with
